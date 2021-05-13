@@ -1,5 +1,5 @@
 <template>
-  <div class="root">
+  <div class="color-picker-root mt-2">
     <div class="display" :style="{ background: currentCol }"></div>
     <div class="row level red">
       <h1 class="title is-3 level-left mb-1">R</h1>
@@ -47,23 +47,32 @@
 </template>
 
 <script>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
+var debounce = require("lodash.debounce");
 export default {
   props: {},
-  setup() {
+  emits: ["colorChange"],
+  setup(props, { emit }) {
     const currentR = ref("0");
     const currentG = ref("0");
     const currentB = ref("0");
+
+    const dbColUpdate = debounce(
+      () => emit("colorChange", { r: currentR, g: currentG, b: currentB }),
+      800
+    );
+
     const currentCol = computed(() => {
-      return (
+      const color =
         "rgba(" +
         currentR.value +
         "," +
         currentG.value +
         "," +
         currentB.value +
-        ",1)"
-      );
+        ",1)";
+      dbColUpdate();
+      return color;
     });
 
     return { currentR, currentG, currentB, currentCol };
@@ -71,13 +80,13 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 @import "../assets/sass/main.scss";
-.root {
+.color-picker-root {
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 .row {
   display: flex;
@@ -95,6 +104,8 @@ h1 {
 .display {
   min-height: 40px;
   width: 100%;
+  border-radius: $card-radius;
+  border: 1px black solid;
 }
 
 // Slider styling

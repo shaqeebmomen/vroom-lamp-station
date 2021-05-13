@@ -1,4 +1,5 @@
 <template>
+  <animation-control :isActive="modalActive" @modalClose="closeModal" />
   <div class="hero is-primary">
     <div class="hero-body has-text-centered">
       <p class="title">Vroom Lamp Station</p>
@@ -6,8 +7,7 @@
   </div>
   <div class="section">
     <div class="shifter-container">
-      <shifter-select />
-      <animation-control />
+      <shifter-select @modalOpen="openModal" />
     </div>
   </div>
   <div class="footer">
@@ -18,18 +18,28 @@
 </template>
 
 <script>
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 export default {
   name: "App",
   components: { ShifterSelect, AnimationControl },
   setup(props) {
+    const modalActive = ref(true);
     onMounted(() => {
       console.log("Mounted");
       window.api.send("toMain", "test");
     });
-    return {};
+
+    const closeModal = () => {
+      modalActive.value = false;
+    };
+
+    const openModal = (index) => {
+      modalActive.value = true;
+    };
+
+    return { modalActive, closeModal, openModal };
   },
 };
 </script>

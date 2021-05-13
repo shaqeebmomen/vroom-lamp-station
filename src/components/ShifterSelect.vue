@@ -1,5 +1,5 @@
 <template>
-  <div class="root">
+  <div class="shifter-select-root">
     <div
       class="button-container"
       v-for="index in 7"
@@ -10,15 +10,17 @@
       }"
     >
       <button
-        :disabled="index == 1"
+        @click="onClick(index)"
         :class="{
           button: true,
           'is-medium': true,
           'is-primary': index != 1,
-          active: index != 1,
+          'is-info': index == 1,
+          'is-outlined': index == 1,
+          active: true,
         }"
       >
-        {{ index == 1 ? "R" : index }}
+        {{ index == 1 ? "Load Data" : index-1 }}
       </button>
     </div>
     <div
@@ -56,13 +58,24 @@
 
 <script>
 export default {
+  emits: ["modalOpen"],
+  setup(props, { emit }) {
+    const onClick = (index) => {
+      if (index != 1) {
+        emit("modalOpen", index);
+      }
+    };
+
+    return { onClick };
+  },
 };
 </script>
 
-<style lang="scss">
-.root {
+<style scoped lang="scss">
+.shifter-select-root {
   width: 50%;
   height: 100%;
+  min-height: 300px;
   display: grid;
   grid-template: 1fr 2fr 1fr / repeat(4, 1fr);
 }

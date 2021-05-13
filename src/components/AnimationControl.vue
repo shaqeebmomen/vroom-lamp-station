@@ -1,6 +1,6 @@
 <template>
   <div :class="{ modal: true, 'is-active': isActive }">
-    <div class="modal-background"></div>
+    <div class="modal-background" @click="onClose"></div>
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Create Animation</p>
@@ -15,6 +15,11 @@
           ></div>
           <div class="controls mt-3">
             <color-picker class="color-picker" />
+            <frame-list
+              :animation="animation"
+              :activeIndex="activeIndex"
+              class="frame-list mt-2"
+            />
           </div>
         </div>
       </section>
@@ -26,8 +31,10 @@
 <script>
 import { onMounted, ref } from "vue";
 import ColorPicker from "./ColorPicker.vue";
+import FrameList from "./FrameList.vue";
+// TODO convert marks from % to timestamps
 export default {
-  components: { ColorPicker },
+  components: { ColorPicker, FrameList },
   props: {
     isActive: {
       default: true,
@@ -35,15 +42,25 @@ export default {
     },
     animation: {
       default: [
-        { color: "white", mark: "0%", active: false },
-        { color: "blue", mark: "10%", active: false },
-        { color: "green", mark: "60%", active: true },
-        { color: "red", mark: "100%", active: false },
+        { color: "white", mark: "0%" },
+        { color: "blue", mark: "10%" },
+        { color: "teal", mark: "20%" },
+        { color: "lime", mark: "24%" },
+        { color: "magenta", mark: "30%" },
+        { color: "lime", mark: "35%" },
+        { color: "pink", mark: "48%" },
+        { color: "blue", mark: "62%" },
+        { color: "green", mark: "80%" },
+        { color: "red", mark: "100%" },
       ],
     },
   },
-  setup(props) {
-    const gradientString = ref("");
+  emits: ["modalClose"],
+  setup(props, { emit }) {
+    const gradientString = ref(""); // String for gradient styling
+    const activeIndex = ref(0); // Active frame chosen to edit
+
+    // Lifecycle Methods
     onMounted(() => {
       let temp = "linear-gradient(to right,";
       props.animation.forEach((frame) => {
@@ -52,15 +69,22 @@ export default {
       gradientString.value = temp.substring(0, temp.length - 1) + ")";
     });
 
-    return { gradientString };
+    const onClose = () => {
+      emit("modalClose", null);
+    };
+
+    return { gradientString, activeIndex, onClose };
   },
 };
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 @import "../assets/sass/main.scss";
+
 .modal-card {
-  max-height: 80%;
+  height: 600px;
+  min-width: 500px;
+  width: 60%;
 }
 .color-display-container {
   height: 100%;
@@ -74,12 +98,15 @@ export default {
 .controls {
   width: 100%;
   display: grid;
-  grid-template: repeat(4, 1fr) / 1fr 1fr;
-  min-height: 300px;
+  grid-template-columns: 1fr 10px 1fr;
+  height: 300px;
 }
 .color-picker {
   width: 100%;
   grid-column: 1;
-  grid-row: 1/5;
+}
+.frame-list {
+  width: 100%;
+  grid-column: 3;
 }
 </style>
