@@ -56,7 +56,6 @@
 
 <script>
 export default {
-  name: "ShifterSelect",
 };
 </script>
 

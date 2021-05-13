@@ -2,7 +2,7 @@
 
 import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
 import serial from "./native_controllers/serial.js"
@@ -63,7 +63,9 @@ app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
-      await installExtension(VUEJS_DEVTOOLS)
+      console.log('install dev tools');
+      await installExtension(VUEJS3_DEVTOOLS)
+      console.log('installed dev tools');
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())
     }

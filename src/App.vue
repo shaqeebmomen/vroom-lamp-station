@@ -7,6 +7,7 @@
   <div class="section">
     <div class="shifter-container">
       <shifter-select />
+      <animation-control />
     </div>
   </div>
   <div class="footer">
@@ -19,9 +20,10 @@
 <script>
 import { onMounted } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
+import AnimationControl from "./components/AnimationControl.vue";
 export default {
   name: "App",
-  components: { ShifterSelect },
+  components: { ShifterSelect, AnimationControl },
   setup(props) {
     onMounted(() => {
       console.log("Mounted");
