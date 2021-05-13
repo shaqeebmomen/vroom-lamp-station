@@ -1,0 +1,22 @@
+<svg width="710" height="510" xmlns="http://www.w3.org/2000/svg">
+ <g stroke="null">
+  <title>Layer 1</title>
+  <rect stroke="#000" fill="#000000" x="5" y="5" width="100" height="300" id="svg_1" rx="50"/>
+  <rect stroke="#000" fill="#000000" x="205" y="5" width="100" height="500" id="svg_2" rx="50"/>
+  <rect stroke="#000" fill="#000000" x="605" y="5" width="100" height="500" id="svg_3" rx="50"/>
+  <rect stroke="#000" fill="#000000" x="405" y="5" width="100" height="500" id="svg_4" rx="50"/>
+  <rect stroke="#000" fill="#000000" opacity="NaN" x="5" y="205" width="700" height="100" id="svg_5" rx="50"/>
+  <path fill="transparent" stroke="black" id="svg_6" stroke-width="50" d="m80,180a50,50 0 0 0 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_7" stroke-width="50" d="m280,180a50,50 0 0 0 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_8" stroke-width="50" d="m480,180a50,50 0 0 0 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_9" stroke-width="50" d="m230,180a50,50 0 0 1 -50,50"/>
+  <path fill="transparent" stroke="black" id="svg_10" stroke-width="50" d="m430,180a50,50 0 0 1 -50,50"/>
+  <path fill="transparent" stroke="black" id="svg_11" stroke-width="50" d="m630,180a50,50 0 0 1 -50,50"/>
+  <path fill="transparent" stroke="black" id="svg_12" stroke-width="50" d="m180,280a50,50 0 0 1 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_13" stroke-width="50" d="m380,280a50,50 0 0 1 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_14" stroke-width="50" d="m580,280a50,50 0 0 1 50,50"/>
+  <path fill="transparent" stroke="black" id="svg_15" stroke-width="50" d="m330,280a50,50 0 0 0 -50,50"/>
+  <path fill="transparent" stroke="black" id="svg_16" stroke-width="50" d="m530,280a50,50 0 0 0 -50,50"/>
+ </g>
+
+</svg>

@@ -6,9 +6,13 @@
 
 // Bulma global vars
 
-
 // Lists and maps
-$custom-colors: ("twitter": ($twitter, $twitter-invert)); // can now use is-twitter as a class
+$custom-colors: (
+    "twitter": (
+        $twitter,
+        $twitter-invert,
+    ),
+); // can now use is-twitter as a class
 $custom-shades: null !default;
 
 // Setup $colors to use as bulma classes (e.g. 'is-twitter')
@@ -75,5 +79,12 @@ $link: $primary;
 $link-invert: $primary-invert;
 $link-focus-border: $primary;
 
-// Import Bulma and Buefy styles
+// Element Variable Specific Overrides
+// Footer
+$footer-padding: 1.25rem 1.5rem 2.5rem;
+
+// Import Bulma
 @import "~bulma";
+// Component Style overrides
+// Buttons
+@import "../sass/components/_buttons.scss";

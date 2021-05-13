@@ -1,9 +1,14 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+import path, { resolve } from "path"
+import serial from "./native_controllers/serial.js"
+
+// Setting as global object to stop garbage collection
+let win;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -12,14 +17,16 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+  win = new BrowserWindow({
+    width: 1080,
+    height: 720,
     webPreferences: {
-      
+
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
+      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   })
 
@@ -78,3 +85,9 @@ if (isDevelopment) {
     })
   }
 }
+
+
+ipcMain.on("toMain", (event, args) => {
+  serial.send();
+  win.webContents.send("fromMain", { data: "serial sent" })
+})
