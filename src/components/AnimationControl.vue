@@ -35,7 +35,7 @@
       <footer class="modal-card-foot">
         <button
           @click="onReset"
-          class="button is-small active is-outlined p-3 is-rounded"
+          class="button is-small is-outlined p-3 is-rounded"
         >
           <span class="icon is-medium">
             <i class="mdi mdi-24px mdi-refresh"></i>
@@ -67,7 +67,7 @@ export default {
     "removeFrame",
     "deleteFrame",
     "colorChange",
-    "resetAnim"
+    "resetAnim",
   ],
   setup(props, { emit }) {
     const gradientString = computed(() => {
@@ -150,7 +150,8 @@ export default {
 @import "../assets/sass/main.scss";
 
 .modal-card {
-  height: 600px;
+  min-height: 650px;
+  height: 80%;
   min-width: 500px;
   width: 60%;
 }

@@ -6,12 +6,20 @@
       </div>
       <div class="level-right">
         <div class="buttons">
-          <button class="button is-small active" @click="removeFrame">
+          <button
+            :disabled="animation.length < 2"
+            class="button is-small"
+            @click="removeFrame"
+          >
             <span class="icon">
               <i class="mdi mdi-minus"></i>
             </span>
           </button>
-          <button class="button is-small active" @click="addFrame">
+          <button
+            :disabled="animation.length > 19"
+            class="button is-small"
+            @click="addFrame"
+          >
             <span class="icon">
               <i class="mdi mdi-plus"></i>
             </span>
@@ -33,7 +41,10 @@
       />
     </ul>
     <p class="help is-danger" v-if="errorFrames.value.length > 0">
-      Invalid Timestamps ({{ errorFrames.value.length }})
+      {{ `Invalid Timestamps ( ${errorFrames.value.length} )` }}
+    </p>
+    <p class="help is-danger" v-if="animation.length > 19">
+      Reached 20 Frame Limit!
     </p>
   </div>
 </template>
@@ -85,6 +96,7 @@ export default {
 
     const updateFrameIndex = (index) => {
       emit("updateFrameIndex", index);
+      list.value.children[index].children.namedItem("input").focus();
       scrollToFrame(index);
     };
 

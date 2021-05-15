@@ -15,42 +15,43 @@
           button: true,
           'is-medium': true,
           'is-primary': true,
-          active: true,
         }"
       >
         {{ index }}
       </button>
     </div>
-    <div class="button-container connect">
+    <div class="button-container upload">
       <button
         :class="{
-          active: true,
           button: true,
           'is-medium': true,
-          'is-success': !connected,
-          'is-danger': connected,
-          'is-loading': connectLoading,
-          'is-outlined': !connected,
+          'is-success': true,
+          'is-loading': isUploading,
+          'is-outlined': true,
         }"
-        @click="onConnectRequest"
+        @click="upload"
       >
-        {{ connected ? "Disconnect" : "Connect" }}
+        <p>Upload</p>
+        <span class="icon is-large">
+          <i class="mdi mdi-36px mdi-upload"></i>
+        </span>
       </button>
     </div>
-    <div class="button-container load">
+    <div class="button-container download">
       <button
-        :disabled="!connected"
         :class="{
-          active: true,
           button: true,
           'is-medium': true,
           'is-info': true,
           'is-outlined': true,
-          'is-loading': loading,
+          'is-loading': isDownloading,
         }"
-        @click="onLoad"
+        @click="download"
       >
-        Load Data
+        <p>Download</p>
+        <span class="icon is-large">
+          <i class="mdi mdi-36px mdi-download"></i>
+        </span>
       </button>
     </div>
     <div
@@ -89,32 +90,28 @@
 <script>
 export default {
   props: {
-    connected: {
+    isUploading: {
       type: Boolean,
     },
-    connectLoading: {
-      type: Boolean,
-    },
-    loading: {
+    isDownloading: {
       type: Boolean,
     },
   },
-  emits: ["modalOpen", "connectionChange", "loadData"],
+  emits: ["modalOpen", "upload", "download"],
   setup(props, { emit }) {
-    const onConnectRequest = () => {
-      // TODO serial IPC
-      emit("connectionChange", true);
+    const upload = () => {
+      emit("upload");
     };
 
     const onClick = (index) => {
       emit("modalOpen", index);
     };
 
-    const onLoad = () => {
-      emit("loadData");
+    const download = () => {
+      emit("download");
     };
 
-    return { onClick, onConnectRequest, onLoad };
+    return { onClick, upload, download };
   },
 };
 </script>
@@ -132,12 +129,12 @@ export default {
   place-items: center;
 }
 
-.connect {
+.upload {
   grid-row: 3;
   grid-column: 1;
 }
 
-.load {
+.download {
   grid-row: 1;
   grid-column: 1;
 }

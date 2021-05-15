@@ -19,7 +19,7 @@
         <div class="refresh-container">
           <button
             @click="onReset"
-            class="button is-small active is-outlined m-4 p-5 is-rounded"
+            class="button is-small is-outlined m-4 p-5 is-rounded"
           >
             <span class="icon is-large">
               <i class="mdi mdi-36px mdi-refresh"></i>
@@ -32,12 +32,11 @@
   <div class="section">
     <div class="shifter-container">
       <shifter-select
-        :connected="connected"
-        :connectLoading="connectionLoading"
-        :loading="dataLoading"
+        :isDownloading="isDownloading"
+        :isUploading="isUploading"
         @modalOpen="openModal"
-        @connectionChange="onConnectionChange"
-        @loadData="onLoadData"
+        @upload="upload"
+        @download="download"
       />
     </div>
   </div>
@@ -162,32 +161,31 @@ export default {
     };
 
     // Connection
-    const connected = ref(false);
-    const connectionLoading = ref(false);
-    const dataLoading = ref(false);
+    const isUploading = ref(false);
+    const isDownloading = ref(false);
 
     /**
      * Attempt to handshake with the lamp
      */
-    const onConnectionChange = () => {
-      connectionLoading.value = true;
-      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.Connect), {
+    const upload = () => {
+      // TODO promisify
+      isUploading.value = true;
+      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
         one: "test",
       });
       // window.ipc.receive("fromMain", (data) => console.log("receive", data));
       setTimeout(() => {
-        connected.value = !connected.value;
-        connectionLoading.value = false;
+        isUploading.value = false;
       }, 1000);
     };
 
     /**
      * Load data from lamp
      */
-    const onLoadData = () => {
-      dataLoading.value = true;
+    const download = () => {
+      isDownloading.value = true;
       setTimeout(() => {
-        dataLoading.value = false;
+        isDownloading.value = false;
       }, 1000);
     };
 
@@ -242,11 +240,10 @@ export default {
       closeModal,
       openModal,
       colorChange,
-      connected,
-      connectionLoading,
-      onConnectionChange,
-      dataLoading,
-      onLoadData,
+      isUploading,
+      upload,
+      isDownloading,
+      download,
       onReset,
       resetAnim,
     };

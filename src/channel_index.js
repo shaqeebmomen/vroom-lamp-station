@@ -1,4 +1,4 @@
-const _channels = ["Connect", "LoadAll", "SendAll"]
+const _channels = ["upload", "download"]
 const channels = {}// base names of channels, used by user
 const toMainChannels = {};// internal names for channels from main to renderer
 const toRenderChannels = {}; // internal names for channels from renderer to main

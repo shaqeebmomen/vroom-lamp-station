@@ -5,8 +5,8 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
-import serial from "./native/serial.js"
 import ipcChannels from "./channel_index.js"
+const SerialPort = require('serialport');
 
 // Setting as global object to stop garbage collection
 let win;
@@ -90,8 +90,22 @@ if (isDevelopment) {
 }
 
 
-ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.Connect), (event, args) => {
+// IPC actions on behalf of render
+// IPC -> Serial
+const lampVID = '1A86';
+const lampPID = '7523';
+
+/**
+ * Connect: find and handshake with the lamp
+ */
+ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args) => {
+
   console.log('args', args);
-  serial.send();
+
+  // List devices connected
+  const deviceList = await SerialPort.list()
+  console.log(deviceList);
+  // Check if lamp is listed exists
+
   // win.webContents.send("fromMain", args)
 })

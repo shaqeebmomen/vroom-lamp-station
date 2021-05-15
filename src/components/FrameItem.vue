@@ -24,12 +24,19 @@
       v-model="timeStamp"
       required
       min="0"
+      name="input"
     />
-    <button
-      class="button delete is-danger level-right"
-      @click.stop="deleteFrame(index)"
-      :disabled="index == 0"
-    ></button>
+    <div class="level-right">
+      <button
+        class="button is-rounded is-danger is-small is-outlined close p-4"
+        @click.stop="deleteFrame(index)"
+        :disabled="index == 0"
+      >
+        <span class="icon">
+          <i class="mdi mdi-18px mdi-close"></i>
+        </span>
+      </button>
+    </div>
   </li>
 </template>
 
@@ -101,6 +108,7 @@ export default {
 .active-item {
   border: 1px $grey solid;
   transform: scale(1.05);
+  transform-origin: center center;
   box-shadow: 0px 5px 10px 0px rgba(0, 0, 0, 0.3);
 }
 
