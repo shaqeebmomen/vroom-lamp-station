@@ -1,19 +1,19 @@
-import {contextBridge, ipcRenderer} from "electron";
+import { contextBridge, ipcRenderer } from "electron";
+import ipcChannels from "./channel_index.js";
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
+console.log(ipcChannels);
 contextBridge.exposeInMainWorld(
-    "api", {
+    "ipc", {
     send: (channel, data) => {
         // whitelist channels
-        let validChannels = ["toMain"];
-        if (validChannels.includes(channel)) {
+        if (Object.values(ipcChannels.toMainChannels).includes(channel)) {
             ipcRenderer.send(channel, data);
         }
     },
     receive: (channel, func) => {
-        let validChannels = ["fromMain"];
-        if (validChannels.includes(channel)) {
+        if (Object.values(ipcChannels.toRenderChannels).includes(channel)) {
             // Deliberately strip event as it includes `sender` 
             ipcRenderer.on(channel, (event, ...args) => func(...args));
         }

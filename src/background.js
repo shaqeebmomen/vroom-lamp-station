@@ -5,7 +5,8 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
-import serial from "./native_controllers/serial.js"
+import serial from "./native/serial.js"
+import ipcChannels from "./channel_index.js"
 
 // Setting as global object to stop garbage collection
 let win;
@@ -89,7 +90,8 @@ if (isDevelopment) {
 }
 
 
-ipcMain.on("toMain", (event, args) => {
+ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.Connect), (event, args) => {
+  console.log('args', args);
   serial.send();
-  win.webContents.send("fromMain", { data: "serial sent" })
+  // win.webContents.send("fromMain", args)
 })

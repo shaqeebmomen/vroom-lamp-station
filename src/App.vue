@@ -52,6 +52,7 @@
 import { nextTick, onMounted, ref } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
+import ipcChannels from "./channel_index.js";
 export default {
   name: "App",
   components: { ShifterSelect, AnimationControl },
@@ -137,11 +138,6 @@ export default {
       animations.value[activeAnimIndex.value].splice(index, 1);
     };
 
-    // onMounted(() => {
-    //   console.log("Mounted");
-    //   window.api.send("toMain", "test");
-    // });
-
     // Modal
     const modalActive = ref(false);
     /**
@@ -154,7 +150,7 @@ export default {
      * Open animation controller modal and update the passed animation
      */
     const openModal = (index) => {
-      activeAnimIndex.value = index-1;
+      activeAnimIndex.value = index - 1;
       modalActive.value = true;
     };
 
@@ -175,6 +171,10 @@ export default {
      */
     const onConnectionChange = () => {
       connectionLoading.value = true;
+      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.Connect), {
+        one: "test",
+      });
+      // window.ipc.receive("fromMain", (data) => console.log("receive", data));
       setTimeout(() => {
         connected.value = !connected.value;
         connectionLoading.value = false;
