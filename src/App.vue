@@ -143,7 +143,7 @@ export default {
     // });
 
     // Modal
-    const modalActive = ref(true);
+    const modalActive = ref(false);
     /**
      * Close Animation controller modal
      */
