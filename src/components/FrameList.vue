@@ -1,43 +1,130 @@
 <template>
   <div class="frame-list-root">
-    <div class="buttons">
-      <button class="button is-small active" @click="addFrame">
-        <span class="icon">
-          <i class="mdi mdi-minus"></i>
-        </span>
-      </button>
-      <button class="button is-small active" @click="removeFrame">
-        <span class="icon">
-          <i class="mdi mdi-plus"></i>
-        </span>
-      </button>
+    <div class="list-head level">
+      <div class="level-left">
+        <h1 class="title is-4">Frames</h1>
+      </div>
+      <div class="level-right">
+        <div class="buttons">
+          <button class="button is-small active" @click="removeFrame">
+            <span class="icon">
+              <i class="mdi mdi-minus"></i>
+            </span>
+          </button>
+          <button class="button is-small active" @click="addFrame">
+            <span class="icon">
+              <i class="mdi mdi-plus"></i>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
-    <ul>
+    <ul ref="list" :class="{ error: errorFrames.value.length > 0 }">
       <frame-item
         v-for="(item, index) in animation"
         :key="index"
         :frame="item"
         :isActiveItem="index == activeIndex"
+        :index="index"
+        @updateFrameIndex="updateFrameIndex"
+        @updateFrameTime="updateFrameTime"
+        @deleteFrame="deleteFrame"
+        :error="errorFrames.value.includes(index)"
       />
     </ul>
+    <p class="help is-danger" v-if="errorFrames.value.length > 0">
+      Invalid Timestamps ({{ errorFrames.value.length }})
+    </p>
   </div>
 </template>
 
 <script>
+import { nextTick, reactive, ref } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
   components: { FrameItem },
-  emits: ["addFrame", "removeFrame"],
+  emits: [
+    "addFrame",
+    "removeFrame",
+    "deleteFrame",
+    "updateFrameIndex",
+    "updateFrameTime",
+  ],
   props: ["animation", "activeIndex"],
   setup(props, { emit }) {
-    const addFrame = () => {
-      emit("addFrame");
+    const list = ref(null);
+    const errorFrames = reactive({ value: [] });
+    const updateFrameTime = (data) => {
+      // If the intent timestamp change is less than the previous frame or greater than the next
+      console.log(data);
+      console.log(props.animation.length);
+      console.log(props.animation);
+      if (
+        isNaN(data.timeStamp) ||
+        (data.index > 0 &&
+          props.animation[data.index - 1].timeStamp > data.timeStamp) ||
+        (data.index < props.animation.length - 1 &&
+          props.animation[data.index + 1].timeStamp < data.timeStamp)
+      ) {
+        // Dont emit anything and add this frame to the error list if not already there
+        if (!errorFrames.value.includes(data.index)) {
+          errorFrames.value.push(data.index);
+        }
+      } else {
+        // Data is good, remove the frame from the error list and emit event accordingly
+        errorFrames.value = errorFrames.value.filter((val) => {
+          return val != data.index;
+        });
+        emit("updateFrameTime", data);
+      }
     };
 
+    const scrollToFrame = (index) => {
+      list.value.children[index].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    };
+
+    const updateFrameIndex = (index) => {
+      emit("updateFrameIndex", index);
+      scrollToFrame(index);
+    };
+
+    const addFrame = () => {
+      emit("addFrame");
+
+      nextTick(() => {
+        updateFrameIndex(list.value.children.length - 1);
+      });
+    };
+
+    /**
+     * Removes frame from end of list
+     */
     const removeFrame = () => {
       emit("removeFrame");
+      nextTick(() => {
+        updateFrameIndex(props.activeIndex);
+      });
     };
-    return { addFrame, removeFrame };
+
+    const deleteFrame = (index) => {
+      updateFrameIndex(index - 1);
+      nextTick(() => {
+        emit("deleteFrame", index);
+      });
+    };
+
+    return {
+      list,
+      errorFrames,
+      addFrame,
+      removeFrame,
+      deleteFrame,
+      updateFrameIndex,
+      updateFrameTime,
+    };
   },
 };
 </script>
@@ -46,19 +133,24 @@ export default {
 @import "../assets/sass/main.scss";
 .frame-list-root {
   max-height: 280px;
+  height: 100%;
   width: 100%;
 }
 
-.buttons {
-  display: flex;
-  justify-content: flex-end;
+.list-head {
+  @extend .mb-3;
 }
 
 ul {
-  @extend .py-2;
+  @extend .py-3;
   max-height: 100%;
   display: flex;
   flex-direction: column;
   overflow-y: scroll;
+  box-shadow: inset $card-shadow;
+  border-radius: $card-radius;
+  &.error {
+    border: 1px $danger solid;
+  }
 }
 </style>

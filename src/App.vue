@@ -1,13 +1,41 @@
 <template>
-  <animation-control :isActive="modalActive" @modalClose="closeModal" />
-  <div class="hero is-primary">
-    <div class="hero-body has-text-centered">
-      <p class="title">Vroom Lamp Station</p>
+  <animation-control
+    :isActive="modalActive"
+    @modalClose="closeModal"
+    :animation="animations[activeAnimIndex]"
+    @updateFrameTime="updateFrameTime"
+    @addFrame="addFrame"
+    @removeFrame="removeFrame"
+    @deleteFrame="deleteFrame"
+    @colorChange="colorChange"
+  />
+  <div class="hero is-small is-primary">
+    <div class="hero-body">
+      <div class="hero-container">
+        <div class="title-container">
+          <p class="title">Vroom Lamp Station</p>
+        </div>
+        <div class="refresh-container">
+          <button
+            @click="onRefresh"
+            class="button is-small active is-outlined m-4 p-5 is-rounded"
+          >
+            <span class="icon is-large">
+              <i class="mdi mdi-36px mdi-refresh"></i>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   <div class="section">
     <div class="shifter-container">
-      <shifter-select @modalOpen="openModal" />
+      <shifter-select
+        :connected="connected"
+        :loading="connectionLoading"
+        @modalOpen="openModal"
+        @connectionChange="onConnectionChange"
+      />
     </div>
   </div>
   <div class="footer">
@@ -18,28 +46,147 @@
 </template>
 
 <script>
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 export default {
   name: "App",
   components: { ShifterSelect, AnimationControl },
   setup(props) {
-    const modalActive = ref(true);
-    onMounted(() => {
-      console.log("Mounted");
-      window.api.send("toMain", "test");
-    });
+    // Animations
+    const animations = ref([
+      [
+        { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 255, g: 0, b: 255 }, timeStamp: 100 },
+        { color: { r: 20, g: 127, b: 90 }, timeStamp: 250 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 1200 },
+        { color: { r: 0, g: 0, b: 255 }, timeStamp: 1900 },
+        { color: { r: 60, g: 200, b: 0 }, timeStamp: 2200 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 3300 },
+        { color: { r: 127, g: 0, b: 127 }, timeStamp: 3500 },
+        { color: { r: 30, g: 90, b: 0 }, timeStamp: 4000 },
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 5000 },
+      ],
+      [
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 30, g: 90, b: 0 }, timeStamp: 20 },
+        { color: { r: 0, g: 0, b: 0 }, timeStamp: 50 },
+        { color: { r: 20, g: 127, b: 90 }, timeStamp: 250 },
+        { color: { r: 0, g: 0, b: 255 }, timeStamp: 400 },
+        { color: { r: 127, g: 0, b: 127 }, timeStamp: 600 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 1050 },
+        { color: { r: 255, g: 0, b: 255 }, timeStamp: 1200 },
+        { color: { r: 60, g: 200, b: 0 }, timeStamp: 2000 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 3300 },
+      ],
+    ]);
 
+    const activeAnimIndex = ref(1);
+
+    /**
+     * Update the timestamp of a frame
+     */
+    const updateFrameTime = (data) => {
+      animations.value[activeAnimIndex.value][data.index].timeStamp =
+        data.timeStamp;
+    };
+
+    /**
+     * Add a frame onto the end of the active animation at a timestamp 500ms later than the last
+     */
+    const addFrame = () => {
+      animations.value[activeAnimIndex.value].push({
+        color: { r: 0, g: 0, b: 0 },
+        timeStamp:
+          animations.value[activeAnimIndex.value][
+            animations.value[activeAnimIndex.value].length - 1
+          ].timeStamp + 500,
+      });
+    };
+
+    /**
+     * Remove a frame from end of active animation
+     */
+    const removeFrame = () => {
+      animations.value[activeAnimIndex.value].pop();
+    };
+
+    /**
+     * Deletes a specific frame
+     */
+    const deleteFrame = (index) => {
+      console.log(index);
+      animations.value[activeAnimIndex.value].splice(index, 1);
+      console.log(animations.value[activeAnimIndex.value]);
+    };
+
+    // onMounted(() => {
+    //   console.log("Mounted");
+    //   window.api.send("toMain", "test");
+    // });
+
+    // Modal
+    const modalActive = ref(true);
+    /**
+     * Close Animation controller modal
+     */
     const closeModal = () => {
       modalActive.value = false;
     };
-
+    /**
+     * Open animation controller modal and update the passed animation
+     */
     const openModal = (index) => {
+      activeAnimIndex.value = index - 2;
       modalActive.value = true;
     };
 
-    return { modalActive, closeModal, openModal };
+    // Color Change
+    const colorChange = (data) => {
+      console.log(data);
+      animations.value[activeAnimIndex.value][data.index].color = {
+        ...data.color,
+      };
+    };
+
+    // Connection
+    const connected = ref(false);
+    const connectionLoading = ref(false);
+
+    /**
+     * Attempt to handshake with the lamp
+     */
+    const onConnectionChange = () => {
+      connectionLoading.value = true;
+      setTimeout(() => {
+        connected.value = !connected.value;
+        connectionLoading.value = false;
+      }, 1000);
+    };
+
+    // State Reset
+    /**
+     * Clear out all the data in animations and disconnects
+     */
+    const onReset = () => {
+      // TODO fill in
+    };
+
+    return {
+      animations,
+      activeAnimIndex,
+      updateFrameTime,
+      addFrame,
+      removeFrame,
+      deleteFrame,
+      modalActive,
+      closeModal,
+      openModal,
+      colorChange,
+      connected,
+      connectionLoading,
+      onConnectionChange,
+    };
   },
 };
 </script>
@@ -70,5 +217,26 @@ export default {
   height: 100%;
   display: grid;
   place-items: center;
+}
+
+.hero-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+.title-container {
+  grid-column: 2;
+  display: grid;
+  place-items: center;
+}
+
+.refresh-container {
+  display: flex;
+  grid-column: 3;
+  justify-content: flex-end;
+  button {
+    display: flex;
+    justify-content: space-between;
+  }
 }
 </style>

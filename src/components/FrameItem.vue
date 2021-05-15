@@ -4,36 +4,76 @@
       'frame-item-root': true,
       level: true,
       'active-item': isActiveItem,
+      error: error,
     }"
+    @click="updateFrameIndex"
   >
-    <div
-      class="color-box level-left"
-      :style="{ background: frame.color }"
-    ></div>
+    <div class="color-box level-left" :style="{ background: color }"></div>
     <!-- TODO bind number here to timestamps ni animation object -->
     <input
       type="number"
-      class="input level-item mx-2"
+      :disabled="index == 0"
+      :class="{
+        input: true,
+        'level-item': true,
+        'mx-2': true,
+        'is-danger': error,
+        'is-full-width': true,
+      }"
       placeholder="time(ms)"
+      v-model="timeStamp"
       required
       min="0"
     />
     <button
       class="button delete is-danger level-right"
-      @click="onDelete(index)"
+      @click.stop="deleteFrame(index)"
+      :disabled="index == 0"
     ></button>
   </li>
 </template>
 
 <script>
+import { onMounted, computed, watch, ref } from "vue";
+import colorHelp from "../helpers/color_help.js";
+var debounce = require("lodash.debounce");
+
 export default {
-  emit: ["delete"],
-  props: ["frame", "isActiveItem"],
+  emit: ["deleteFrame", "updateFrameIndex", "updateFrameTime"],
+  props: ["frame", "index", "isActiveItem", "error"],
   setup(props, { emit }) {
-    const onDelete = (index) => {
-      emit("delete", index);
+    const timeStamp = ref(props.frame.timeStamp);
+
+    watch(
+      () => timeStamp.value,
+      (newVal, oldVal) => {
+        const data = {
+          timeStamp: parseInt(newVal),
+          index: props.index,
+        };
+        emit("updateFrameTime", data);
+      }
+    );
+    watch(
+      () => props.frame.timeStamp,
+      (newVal, oldVal) => {
+        timeStamp.value = newVal;
+      }
+    );
+
+    const color = computed(() => {
+      const { r, g, b } = props.frame.color;
+      return colorHelp.rgbToStyle(r, g, b);
+    });
+
+    const updateFrameIndex = () => {
+      emit("updateFrameIndex", props.index);
     };
-    return { onDelete };
+
+    const deleteFrame = () => {
+      emit("deleteFrame", props.index);
+    };
+    return { timeStamp, deleteFrame, updateFrameIndex, color };
   },
 };
 </script>
@@ -53,6 +93,9 @@ export default {
   border-radius: 5px;
   box-shadow: 0px 3px 8px 0px rgba(0, 0, 0, 0.6);
   transition: all 0.2s;
+  &.error {
+    border: 1px red solid;
+  }
 }
 
 .active-item {
@@ -62,7 +105,8 @@ export default {
 }
 
 .input {
-  max-width: 80%;
+  //   min-width: 50px;
+  width: 50%;
 }
 .color-box {
   border: 1px solid black;

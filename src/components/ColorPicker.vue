@@ -47,33 +47,36 @@
 </template>
 
 <script>
-import { ref, computed, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import colorHelp from "../helpers/color_help.js";
 var debounce = require("lodash.debounce");
 export default {
-  props: {},
+  props: ["activeColor"],
   emits: ["colorChange"],
   setup(props, { emit }) {
     const currentR = ref("0");
     const currentG = ref("0");
     const currentB = ref("0");
 
-    const dbColUpdate = debounce(
-      () => emit("colorChange", { r: currentR, g: currentG, b: currentB }),
-      800
-    );
-
     const currentCol = computed(() => {
-      const color =
-        "rgba(" +
-        currentR.value +
-        "," +
-        currentG.value +
-        "," +
-        currentB.value +
-        ",1)";
-      dbColUpdate();
-      return color;
+      // Emit event
+      emit("colorChange", { r: currentR.value, g: currentG.value, b: currentB.value });
+      return colorHelp.rgbToStyle(
+        currentR.value,
+        currentG.value,
+        currentB.value
+      );
     });
+
+    watch(
+      () => props.activeColor,
+      (newVal, oldVal) => {
+        currentR.value = newVal.r.toString();
+        currentG.value = newVal.g.toString();
+        currentB.value = newVal.b.toString();
+      },
+      { deep: true }
+    );
 
     return { currentR, currentG, currentB, currentCol };
   },
@@ -103,6 +106,8 @@ h1 {
 
 .display {
   min-height: 40px;
+  height: 30%;
+  max-height: 200px;
   width: 100%;
   border-radius: $card-radius;
   border: 1px black solid;

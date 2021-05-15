@@ -14,11 +14,20 @@
             }"
           ></div>
           <div class="controls mt-3">
-            <color-picker class="color-picker" />
+            <color-picker
+              class="color-picker"
+              :activeColor="animation[activeIndex].color"
+              @colorChange="colorChange"
+            />
             <frame-list
               :animation="animation"
               :activeIndex="activeIndex"
               class="frame-list mt-2"
+              @updateFrameIndex="updateFrameIndex"
+              @updateFrameTime="updateFrameTime"
+              @addFrame="addFrame"
+              @removeFrame="removeFrame"
+              @deleteFrame="deleteFrame"
             />
           </div>
         </div>
@@ -29,10 +38,10 @@
 </template>
 
 <script>
-import { onMounted, ref } from "vue";
+import { ref, computed, nextTick } from "vue";
 import ColorPicker from "./ColorPicker.vue";
 import FrameList from "./FrameList.vue";
-// TODO convert marks from % to timestamps
+import colorHelp from "../helpers/color_help.js";
 export default {
   components: { ColorPicker, FrameList },
   props: {
@@ -40,40 +49,77 @@ export default {
       default: true,
       type: Boolean,
     },
-    animation: {
-      default: [
-        { color: "white", mark: "0%" },
-        { color: "blue", mark: "10%" },
-        { color: "teal", mark: "20%" },
-        { color: "lime", mark: "24%" },
-        { color: "magenta", mark: "30%" },
-        { color: "lime", mark: "35%" },
-        { color: "pink", mark: "48%" },
-        { color: "blue", mark: "62%" },
-        { color: "green", mark: "80%" },
-        { color: "red", mark: "100%" },
-      ],
-    },
+    animation: {},
   },
-  emits: ["modalClose"],
+  emits: [
+    "modalClose",
+    "updateFrameTime",
+    "addFrame",
+    "removeFrame",
+    "deleteFrame",
+    "colorChange",
+  ],
   setup(props, { emit }) {
-    const gradientString = ref(""); // String for gradient styling
-    const activeIndex = ref(0); // Active frame chosen to edit
-
-    // Lifecycle Methods
-    onMounted(() => {
+    const gradientString = computed(() => {
+      const maxTime = props.animation[props.animation.length - 1].timeStamp;
       let temp = "linear-gradient(to right,";
       props.animation.forEach((frame) => {
-        temp += frame.color + " " + frame.mark + ",";
+        temp +=
+          colorHelp.rgbToStyle(frame.color.r, frame.color.g, frame.color.b) +
+          " " +
+          Math.floor((frame.timeStamp / maxTime) * 100).toString() +
+          "% ,";
       });
-      gradientString.value = temp.substring(0, temp.length - 1) + ")";
+      return temp.substring(0, temp.length - 1) + ")";
     });
 
+    // Handling Frame Changes
+    const updateFrameTime = (data) => {
+      emit("updateFrameTime", data);
+    };
+
+    const activeIndex = ref(0); // Active frame chosen to edit
+    const updateFrameIndex = (index) => {
+      activeIndex.value = index;
+      // TODO update color picker color
+    };
+
+    const addFrame = () => {
+      emit("addFrame");
+    };
+
+    const removeFrame = () => {
+      if (activeIndex.value == props.animation.length - 1) {
+        updateFrameIndex(activeIndex.value - 1);
+      }
+      emit("removeFrame");
+    };
+
+    const deleteFrame = (index) => {
+      emit("deleteFrame", index);
+    };
+
+    // Modal
     const onClose = () => {
       emit("modalClose", null);
     };
 
-    return { gradientString, activeIndex, onClose };
+    // Color picker
+    const colorChange = (data) => {
+      emit("colorChange", { index: activeIndex.value, color: { ...data } });
+    };
+
+    return {
+      gradientString,
+      activeIndex,
+      onClose,
+      addFrame,
+      removeFrame,
+      deleteFrame,
+      updateFrameIndex,
+      updateFrameTime,
+      colorChange,
+    };
   },
 };
 </script>

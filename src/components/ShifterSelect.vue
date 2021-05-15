@@ -11,6 +11,7 @@
     >
       <button
         @click="onClick(index)"
+        :disabled="index == 1 && !connected"
         :class="{
           button: true,
           'is-medium': true,
@@ -20,7 +21,23 @@
           active: true,
         }"
       >
-        {{ index == 1 ? "Load Data" : index-1 }}
+        {{ index == 1 ? "Load Data" : index - 1 }}
+      </button>
+    </div>
+    <div class="button-container connect">
+      <button
+        :class="{
+          active: true,
+          button: true,
+          'is-medium': true,
+          'is-success': !connected,
+          'is-danger': connected,
+          'is-loading': loading,
+          'is-outlined': !connected,
+        }"
+        @click="onConnectRequest"
+      >
+        {{ connected ? "Disconnect" : "Connect" }}
       </button>
     </div>
     <div
@@ -58,15 +75,28 @@
 
 <script>
 export default {
-  emits: ["modalOpen"],
+  props: {
+    connected: {
+      type: Boolean,
+    },
+    loading: {
+      type: Boolean,
+    },
+  },
+  emits: ["modalOpen", "connectionChange"],
   setup(props, { emit }) {
+    const onConnectRequest = () => {
+      // TODO serial IPC
+      emit("connectionChange", true);
+    };
+
     const onClick = (index) => {
       if (index != 1) {
         emit("modalOpen", index);
       }
     };
 
-    return { onClick };
+    return { onClick, onConnectRequest };
   },
 };
 </script>
@@ -82,5 +112,9 @@ export default {
 .button-container {
   display: grid;
   place-items: center;
+}
+
+.connect {
+  grid: 3 / 1;
 }
 </style>
