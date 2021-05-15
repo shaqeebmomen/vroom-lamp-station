@@ -10,6 +10,7 @@
       }"
     >
       <button
+        :disabled="isUploading || isDownloading"
         @click="onClick(index)"
         :class="{
           button: true,
@@ -22,6 +23,7 @@
     </div>
     <div class="button-container upload">
       <button
+        :disabled="isUploading || isDownloading"
         :class="{
           button: true,
           'is-medium': true,
@@ -39,6 +41,7 @@
     </div>
     <div class="button-container download">
       <button
+        :disabled="isUploading || isDownloading"
         :class="{
           button: true,
           'is-medium': true,

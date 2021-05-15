@@ -90,22 +90,64 @@ if (isDevelopment) {
 }
 
 
+const timeout = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // IPC actions on behalf of render
 // IPC -> Serial
+
+// Device info
 const lampVID = '1A86';
 const lampPID = '7523';
+const serialNum = '5&30920091&0&5';
+let port;
+
+
+
 
 /**
  * Connect: find and handshake with the lamp
  */
 ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args) => {
-
+  // TODO error checks
   console.log('args', args);
 
-  // List devices connected
-  const deviceList = await SerialPort.list()
-  console.log(deviceList);
-  // Check if lamp is listed exists
+  // List devices connected and check if lamp is listed
+  const lamp = (await SerialPort.list()).find((device) => {
+    return device.serialNumber === serialNum && device.vendorId === lampVID && device.productId === lampPID;
+  })
 
-  // win.webContents.send("fromMain", args)
+  if (isDevelopment) console.log(lamp);
+
+  // if device not found
+  if (lamp === undefined) {
+    if (isDevelopment) console.error('Error: find lamp ', 'no device connected');
+    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: 'no device connected' });
+    return;
+  }
+
+  // Open port
+  port = new SerialPort(lamp.path, {
+    baudRate: 9600,
+    autoOpen: false
+  })
+  // Port setup
+  port.on('error', (err) => {
+    if (isDevelopment) console.error('Error: err-callback', err);
+    // Send error to renderer
+    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: err })
+    return;
+  })
+
+  port.open((err) => {
+    if(isDevelopment && err) return console.error('Error: port.open', err);
+    // Port is open
+  })
+
+  // Stringify data
+  // Send data
+
+
+  // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), deviceList)
 })

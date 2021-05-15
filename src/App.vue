@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 import ipcChannels from "./channel_index.js";
@@ -164,19 +164,37 @@ export default {
     const isUploading = ref(false);
     const isDownloading = ref(false);
 
+    // Set up listeners for ipc receive on mount
+    onMounted(() => {
+      // Receive after main process uploads
+      window.ipc.receive(
+        ipcChannels.getToRenderChannel(ipcChannels.upload),
+        (data) => {
+          isUploading.value = false;
+        }
+      );
+
+      // Receive after main process downlods
+      window.ipc.receive(
+        ipcChannels.getToRenderChannel(ipcChannels.download),
+        (data) => {
+          isDownloading.value = false;
+        }
+      );
+    });
+
     /**
      * Attempt to handshake with the lamp
      */
     const upload = () => {
       // TODO promisify
       isUploading.value = true;
-      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
-        one: "test",
-      });
-      // window.ipc.receive("fromMain", (data) => console.log("receive", data));
-      setTimeout(() => {
-        isUploading.value = false;
-      }, 1000);
+      const payload = toRaw(animations)._rawValue;
+      console.log(payload);
+      window.ipc.send(
+        ipcChannels.getToMainChannel(ipcChannels.upload),
+        payload
+      );
     };
 
     /**
@@ -184,9 +202,6 @@ export default {
      */
     const download = () => {
       isDownloading.value = true;
-      setTimeout(() => {
-        isDownloading.value = false;
-      }, 1000);
     };
 
     // State Reset
