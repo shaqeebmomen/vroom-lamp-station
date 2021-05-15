@@ -56,9 +56,6 @@ export default {
     const errorFrames = reactive({ value: [] });
     const updateFrameTime = (data) => {
       // If the intent timestamp change is less than the previous frame or greater than the next
-      console.log(data);
-      console.log(props.animation.length);
-      console.log(props.animation);
       if (
         isNaN(data.timeStamp) ||
         (data.index > 0 &&

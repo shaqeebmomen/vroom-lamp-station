@@ -8,6 +8,7 @@
     @removeFrame="removeFrame"
     @deleteFrame="deleteFrame"
     @colorChange="colorChange"
+    @resetAnim="resetAnim"
   />
   <div class="hero is-small is-primary">
     <div class="hero-body">
@@ -17,7 +18,7 @@
         </div>
         <div class="refresh-container">
           <button
-            @click="onRefresh"
+            @click="onReset"
             class="button is-small active is-outlined m-4 p-5 is-rounded"
           >
             <span class="icon is-large">
@@ -32,9 +33,11 @@
     <div class="shifter-container">
       <shifter-select
         :connected="connected"
-        :loading="connectionLoading"
+        :connectLoading="connectionLoading"
+        :loading="dataLoading"
         @modalOpen="openModal"
         @connectionChange="onConnectionChange"
+        @loadData="onLoadData"
       />
     </div>
   </div>
@@ -79,6 +82,22 @@ export default {
         { color: { r: 60, g: 200, b: 0 }, timeStamp: 2000 },
         { color: { r: 0, g: 255, b: 0 }, timeStamp: 3300 },
       ],
+      [
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
+      ],
+      [
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
+      ],
+      [
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
+      ],
+      [
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
+      ],
     ]);
 
     const activeAnimIndex = ref(1);
@@ -115,9 +134,7 @@ export default {
      * Deletes a specific frame
      */
     const deleteFrame = (index) => {
-      console.log(index);
       animations.value[activeAnimIndex.value].splice(index, 1);
-      console.log(animations.value[activeAnimIndex.value]);
     };
 
     // onMounted(() => {
@@ -137,13 +154,12 @@ export default {
      * Open animation controller modal and update the passed animation
      */
     const openModal = (index) => {
-      activeAnimIndex.value = index - 2;
+      activeAnimIndex.value = index-1;
       modalActive.value = true;
     };
 
     // Color Change
     const colorChange = (data) => {
-      console.log(data);
       animations.value[activeAnimIndex.value][data.index].color = {
         ...data.color,
       };
@@ -152,6 +168,7 @@ export default {
     // Connection
     const connected = ref(false);
     const connectionLoading = ref(false);
+    const dataLoading = ref(false);
 
     /**
      * Attempt to handshake with the lamp
@@ -164,12 +181,54 @@ export default {
       }, 1000);
     };
 
+    /**
+     * Load data from lamp
+     */
+    const onLoadData = () => {
+      dataLoading.value = true;
+      setTimeout(() => {
+        dataLoading.value = false;
+      }, 1000);
+    };
+
     // State Reset
     /**
      * Clear out all the data in animations and disconnects
      */
     const onReset = () => {
-      // TODO fill in
+      animations.value = [
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+        [
+          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+        ],
+      ];
+    };
+
+    const resetAnim = () => {
+      animations.value[activeAnimIndex.value] = [
+        { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
+        { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
+      ];
     };
 
     return {
@@ -186,6 +245,10 @@ export default {
       connected,
       connectionLoading,
       onConnectionChange,
+      dataLoading,
+      onLoadData,
+      onReset,
+      resetAnim,
     };
   },
 };

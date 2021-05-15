@@ -2,26 +2,23 @@
   <div class="shifter-select-root">
     <div
       class="button-container"
-      v-for="index in 7"
+      v-for="index in 6"
       :key="index"
       :style="{
-        gridColumn: index > 4 ? (index % 4) + 1 : index,
-        gridRow: index > 4 ? 3 : 1,
+        gridColumn: index + 1 > 4 ? ((index + 1) % 4) + 1 : index + 1,
+        gridRow: index + 1 > 4 ? 3 : 1,
       }"
     >
       <button
         @click="onClick(index)"
-        :disabled="index == 1 && !connected"
         :class="{
           button: true,
           'is-medium': true,
-          'is-primary': index != 1,
-          'is-info': index == 1,
-          'is-outlined': index == 1,
+          'is-primary': true,
           active: true,
         }"
       >
-        {{ index == 1 ? "Load Data" : index - 1 }}
+        {{ index }}
       </button>
     </div>
     <div class="button-container connect">
@@ -32,12 +29,28 @@
           'is-medium': true,
           'is-success': !connected,
           'is-danger': connected,
-          'is-loading': loading,
+          'is-loading': connectLoading,
           'is-outlined': !connected,
         }"
         @click="onConnectRequest"
       >
         {{ connected ? "Disconnect" : "Connect" }}
+      </button>
+    </div>
+    <div class="button-container load">
+      <button
+        :disabled="!connected"
+        :class="{
+          active: true,
+          button: true,
+          'is-medium': true,
+          'is-info': true,
+          'is-outlined': true,
+          'is-loading': loading,
+        }"
+        @click="onLoad"
+      >
+        Load Data
       </button>
     </div>
     <div
@@ -79,11 +92,14 @@ export default {
     connected: {
       type: Boolean,
     },
+    connectLoading: {
+      type: Boolean,
+    },
     loading: {
       type: Boolean,
     },
   },
-  emits: ["modalOpen", "connectionChange"],
+  emits: ["modalOpen", "connectionChange", "loadData"],
   setup(props, { emit }) {
     const onConnectRequest = () => {
       // TODO serial IPC
@@ -91,12 +107,14 @@ export default {
     };
 
     const onClick = (index) => {
-      if (index != 1) {
-        emit("modalOpen", index);
-      }
+      emit("modalOpen", index);
     };
 
-    return { onClick, onConnectRequest };
+    const onLoad = () => {
+      emit("loadData");
+    };
+
+    return { onClick, onConnectRequest, onLoad };
   },
 };
 </script>
@@ -115,6 +133,12 @@ export default {
 }
 
 .connect {
-  grid: 3 / 1;
+  grid-row: 3;
+  grid-column: 1;
+}
+
+.load {
+  grid-row: 1;
+  grid-column: 1;
 }
 </style>

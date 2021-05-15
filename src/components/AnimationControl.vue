@@ -32,13 +32,22 @@
           </div>
         </div>
       </section>
-      <footer class="modal-card-foot"></footer>
+      <footer class="modal-card-foot">
+        <button
+          @click="onReset"
+          class="button is-small active is-outlined p-3 is-rounded"
+        >
+          <span class="icon is-medium">
+            <i class="mdi mdi-24px mdi-refresh"></i>
+          </span>
+        </button>
+      </footer>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, nextTick } from "vue";
+import { ref, computed, nextTick, watch } from "vue";
 import ColorPicker from "./ColorPicker.vue";
 import FrameList from "./FrameList.vue";
 import colorHelp from "../helpers/color_help.js";
@@ -58,6 +67,7 @@ export default {
     "removeFrame",
     "deleteFrame",
     "colorChange",
+    "resetAnim"
   ],
   setup(props, { emit }) {
     const gradientString = computed(() => {
@@ -81,8 +91,14 @@ export default {
     const activeIndex = ref(0); // Active frame chosen to edit
     const updateFrameIndex = (index) => {
       activeIndex.value = index;
-      // TODO update color picker color
     };
+
+    watch(
+      () => props.animation,
+      (newVal, oldVal) => {
+        updateFrameIndex(0);
+      }
+    );
 
     const addFrame = () => {
       emit("addFrame");
@@ -109,6 +125,11 @@ export default {
       emit("colorChange", { index: activeIndex.value, color: { ...data } });
     };
 
+    // Reset
+    const onReset = () => {
+      emit("resetAnim");
+    };
+
     return {
       gradientString,
       activeIndex,
@@ -119,6 +140,7 @@ export default {
       updateFrameIndex,
       updateFrameTime,
       colorChange,
+      onReset,
     };
   },
 };
@@ -154,5 +176,10 @@ export default {
 .frame-list {
   width: 100%;
   grid-column: 3;
+}
+
+.modal-card-foot {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
