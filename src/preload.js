@@ -3,7 +3,6 @@ import ipcChannels from "./channel_index.js";
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
-console.log(ipcChannels);
 contextBridge.exposeInMainWorld(
     "ipc", {
     send: (channel, data) => {

@@ -6,7 +6,7 @@ import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
 import ipcChannels from "./channel_index.js"
-const SerialPort = require('serialport');
+import SerialManager from './native/serial.js'
 
 // Setting as global object to stop garbage collection
 let win;
@@ -34,7 +34,7 @@ async function createWindow() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools()
+    // if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
     createProtocol('app')
     // Load the index.html when not in development
@@ -97,57 +97,41 @@ const timeout = (ms) => {
 // IPC actions on behalf of render
 // IPC -> Serial
 
-// Device info
-const lampVID = '1A86';
-const lampPID = '7523';
-const serialNum = '5&30920091&0&5';
-let port;
-
-
-
+const serialManager = new SerialManager();
 
 /**
  * Connect: find and handshake with the lamp
  */
 ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args) => {
-  // TODO error checks
-  console.log('args', args);
-
-  // List devices connected and check if lamp is listed
-  const lamp = (await SerialPort.list()).find((device) => {
-    return device.serialNumber === serialNum && device.vendorId === lampVID && device.productId === lampPID;
-  })
-
-  if (isDevelopment) console.log(lamp);
-
-  // if device not found
-  if (lamp === undefined) {
-    if (isDevelopment) console.error('Error: find lamp ', 'no device connected');
-    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: 'no device connected' });
-    return;
-  }
-
-  // Open port
-  port = new SerialPort(lamp.path, {
-    baudRate: 9600,
-    autoOpen: false
-  })
   // Port setup
-  port.on('error', (err) => {
-    if (isDevelopment) console.error('Error: err-callback', err);
-    // Send error to renderer
-    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: err })
-    return;
-  })
-
-  port.open((err) => {
-    if(isDevelopment && err) return console.error('Error: port.open', err);
-    // Port is open
-  })
-
+  await serialManager.connect();
   // Stringify data
-  // Send data
+  const { anims } = args;
+  for (let index = 0; index < anims.length; index++) {
+    const anim = anims[index]; // Current animation
 
-
-  // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), deviceList)
+    /**
+     * Data format
+     * [gear(1 byte)][frameCount (1 byte)]...[animationFrame (5 bytes)]*frameCount
+     */
+    // Output string
+    const outputBuff = Buffer.alloc(2 + 5 * anim.length)
+    const initByteShift = 10; // Shifts the first two bytes (which are typically < 10) up so they are easy to detect (according to my oscilloscope)
+    // Gear
+    outputBuff.writeUInt8(index + initByteShift, 0);
+    // Frame Count
+    outputBuff.writeUInt8(anim.length + initByteShift, 1);
+    // Animation frames
+    anim.forEach((frame, index) => {
+      const offset = 2 + index * 5;
+      outputBuff.writeUInt8(frame.color.r, offset, 1);
+      outputBuff.writeUInt8(frame.color.g, offset + 1);
+      outputBuff.writeUInt8(frame.color.b, offset + 2);
+      outputBuff.writeUInt16BE(frame.timeStamp, offset + 3);
+    });
+    if (isDevelopment) console.log('outputBuffer', outputBuff);
+    await serialManager.writeToDevice(outputBuff);
+    // TODO Wait for mcu acknowledge
+  }
+  win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { msg: 'success' })
 })

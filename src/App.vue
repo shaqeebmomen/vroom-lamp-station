@@ -166,6 +166,7 @@ export default {
 
     // Set up listeners for ipc receive on mount
     onMounted(() => {
+      // TODO frontend error handling
       // Receive after main process uploads
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
@@ -187,14 +188,11 @@ export default {
      * Attempt to handshake with the lamp
      */
     const upload = () => {
-      // TODO promisify
       isUploading.value = true;
-      const payload = toRaw(animations)._rawValue;
-      console.log(payload);
-      window.ipc.send(
-        ipcChannels.getToMainChannel(ipcChannels.upload),
-        payload
-      );
+      const anims = toRaw(animations)._rawValue;
+      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
+        anims,
+      });
     };
 
     /**

@@ -33,6 +33,9 @@
         </div>
       </section>
       <footer class="modal-card-foot">
+        <p class="has-text-warning">
+          {{ "Avoid Values Under 10, Except 0" }}
+        </p>
         <button
           @click="onReset"
           class="button is-small is-outlined p-3 is-rounded"
@@ -181,6 +184,6 @@ export default {
 
 .modal-card-foot {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 </style>
