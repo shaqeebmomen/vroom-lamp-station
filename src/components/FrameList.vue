@@ -102,7 +102,6 @@ export default {
 
     const addFrame = () => {
       emit("addFrame");
-
       nextTick(() => {
         updateFrameIndex(list.value.children.length - 1);
       });

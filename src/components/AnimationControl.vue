@@ -61,7 +61,9 @@ export default {
       default: true,
       type: Boolean,
     },
-    animation: {},
+    animation: {
+      type: Array,
+    },
   },
   emits: [
     "modalClose",

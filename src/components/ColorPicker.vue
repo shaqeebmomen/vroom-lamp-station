@@ -49,18 +49,21 @@
 <script>
 import { ref, computed, onMounted, watch } from "vue";
 import colorHelp from "../helpers/color_help.js";
-var debounce = require("lodash.debounce");
 export default {
   props: ["activeColor"],
   emits: ["colorChange"],
   setup(props, { emit }) {
-    const currentR = ref("0");
-    const currentG = ref("0");
-    const currentB = ref("0");
+    const currentR = ref(props.activeColor.r);
+    const currentG = ref(props.activeColor.g);
+    const currentB = ref(props.activeColor.b);
 
     const currentCol = computed(() => {
       // Emit event
-      emit("colorChange", { r: currentR.value, g: currentG.value, b: currentB.value });
+      emit("colorChange", {
+        r: parseInt(currentR.value),
+        g: parseInt(currentG.value),
+        b: parseInt(currentB.value),
+      });
       return colorHelp.rgbToStyle(
         currentR.value,
         currentG.value,

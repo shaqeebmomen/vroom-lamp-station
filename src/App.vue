@@ -52,53 +52,18 @@ import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 import ipcChannels from "./channel_index.js";
+import defaultAnims from "./default_anims.js";
 export default {
   name: "App",
   components: { ShifterSelect, AnimationControl },
   setup(props) {
     // Animations
-    const animations = ref([
-      [
-        { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 255, g: 0, b: 255 }, timeStamp: 100 },
-        { color: { r: 20, g: 127, b: 90 }, timeStamp: 250 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 1200 },
-        { color: { r: 0, g: 0, b: 255 }, timeStamp: 1900 },
-        { color: { r: 60, g: 200, b: 0 }, timeStamp: 2200 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 3300 },
-        { color: { r: 127, g: 0, b: 127 }, timeStamp: 3500 },
-        { color: { r: 30, g: 90, b: 0 }, timeStamp: 4000 },
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 5000 },
-      ],
-      [
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 30, g: 90, b: 0 }, timeStamp: 20 },
-        { color: { r: 0, g: 0, b: 0 }, timeStamp: 50 },
-        { color: { r: 20, g: 127, b: 90 }, timeStamp: 250 },
-        { color: { r: 0, g: 0, b: 255 }, timeStamp: 400 },
-        { color: { r: 127, g: 0, b: 127 }, timeStamp: 600 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 1050 },
-        { color: { r: 255, g: 0, b: 255 }, timeStamp: 1200 },
-        { color: { r: 60, g: 200, b: 0 }, timeStamp: 2000 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 3300 },
-      ],
-      [
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
-      ],
-      [
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
-      ],
-      [
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
-      ],
-      [
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
-      ],
-    ]);
+    const animations = ref([]);
+    // Copy data from default animatinos file into ref
+    for (let index = 0; index < defaultAnims.length; index++) {
+      animations.value.push([]);
+      animations.value[index] = [...defaultAnims[index]];
+    }
 
     const activeAnimIndex = ref(1);
 
@@ -204,42 +169,20 @@ export default {
 
     // State Reset
     /**
-     * Clear out all the data in animations and disconnects
+     * Clear out all the data in animations
      */
     const onReset = () => {
-      animations.value = [
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-        [
-          { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-          { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-        ],
-      ];
+      animations.value = []; // Clear array
+      defaultAnims.forEach((anim) => {
+        animations.value.push([...anim]);
+      });
     };
 
     const resetAnim = () => {
-      animations.value[activeAnimIndex.value] = [
-        { color: { r: 0, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 255, g: 255, b: 255 }, timeStamp: 1000 },
-      ];
+      animations.value[activeAnimIndex.value] = [];
+      defaultAnims[activeAnimIndex.value].forEach((defaultFrame) => {
+        animations.value[activeAnimIndex.value].push({ ...defaultFrame });
+      });
     };
 
     return {

@@ -2,23 +2,23 @@
   <div class="shifter-select-root">
     <div
       class="button-container"
-      v-for="index in 6"
+      v-for="(value,index) in [1,3,5,2,4,6]"
       :key="index"
       :style="{
-        gridColumn: index + 1 > 4 ? ((index + 1) % 4) + 1 : index + 1,
-        gridRow: index + 1 > 4 ? 3 : 1,
+        gridColumn: index + 2 > 4 ? ((index + 2) % 4) + 1 : index + 2,
+        gridRow: index + 2 > 4 ? 3 : 1,
       }"
     >
       <button
         :disabled="isUploading || isDownloading"
-        @click="onClick(index)"
+        @click="onClick(value)"
         :class="{
           button: true,
           'is-medium': true,
           'is-primary': true,
         }"
       >
-        {{ index }}
+        {{ value }}
       </button>
     </div>
     <div class="button-container upload">
