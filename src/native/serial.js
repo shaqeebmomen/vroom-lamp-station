@@ -1,21 +1,37 @@
 import SerialPort from 'serialport';
+import ByteLength from '@serialport/parser-byte-length';
 import Logger from '../helpers/logger.js'
 const isDevelopment = process.env.NODE_ENV !== 'production'
+import misc from '../helpers/misc.js'
 
 export default class {
 
     constructor() {
         // Port object
         this.port = undefined;
-        // Serial Tester info
-        this.testVID = '10C4';
-        this.testPID = 'EA60';
-        this.testSerialNum = '0001';
+        this.allowedDevices = [
+            // Lamp info
+            {
+                vid: '1A86',
+                pid: '7523',
+                serialNum: '5&30920091&0&5'
+            },
+            // Serial Tester info
+            {
+                vid: '10C4',
+                pid: 'EA60',
+                serialNum: '0001',
 
-        // Lamp info
-        this.lampVID = '1A86';
-        this.lampPID = '7523';
-        this.serialNum = '5&30920091&0&5';
+            },
+
+            // Monitor
+            {
+                vid: '2A03',
+                pid: '0043',
+                serialNum: '55632313838351215180',
+            }
+        ]
+
 
     }
 
@@ -30,10 +46,12 @@ export default class {
             try {
                 device = (await SerialPort.list()).find((device) => {
                     if (isDevelopment) {
-                        return (device.serialNumber === this.serialNum || device.serialNumber === this.testSerialNum) && (device.vendorId === this.lampVID || device.vendorId === this.testVID) && (device.productId === this.lampPID || device.productId === this.testPID);
+                        return this.allowedDevices.find((allowedDevice) => {
+                            return allowedDevice.vid === device.vendorId && allowedDevice.pid === device.productId && allowedDevice.serialNum === device.serialNumber;
+                        })
                     }
                     else {
-                        return device.serialNumber === this.serialNum && device.vendorId === this.lampVID && device.productId === this.lampPID;
+                        return device.serialNumber === this.allowedDevices[0].serialNum && device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
                     }
                 })
                 log.logInfo('Device Found', device);
@@ -53,11 +71,12 @@ export default class {
 
             // Open port
             this.port = new SerialPort(device.path, {
-                baudRate: 9600,
+                baudRate: 19200,
                 autoOpen: false,
                 dataBits: 8,
                 stopBits: 1,
                 parity: 'none',
+                highWaterMark: 131072
             })
 
             // Port event listeners
@@ -66,54 +85,116 @@ export default class {
                 log.logErr('PORT_ERR_EVNT', err, 'Port Event/');
             })
 
+            // Close
             this.port.on('close', (err) => {
                 if (err && err.disconnected) log.logInfo('PORT_DISCONNECT', err, 'Port Event/')
                 else log.logInfo('PORT_CLOSE', err || null, 'Port Event/')
             })
+
+            // this.port.on('data', console.log);
 
             resolve();
         })// Promise end
     } // end connect()
 
 
+    // TODO blow this function up
+    // Open
+    open() {
+        const log = new Logger('open()', isDevelopment);
+        return new Promise((resolve, reject) => {
+            // Open Port
+            this.port.open(async (err) => {
+                if (err) {
+                    log.logErr('', err);
+                    reject({ error: err, errorMsg: 'OPEN_ERR' })
+                } else {
+                    resolve();
+                }
+            })
+        })
+    }
+
+    // Close
+    close() {
+        const log = new Logger('close()', isDevelopment);
+        return new Promise((resolve, reject) => {
+
+            this.port.close((err) => {
+                if (err) {
+                    log.logErr('', err);
+                    reject({ error: err, errorMsg: 'CLOSE_ERR' })
+                }
+                else {
+                    resolve();
+                }
+            })
+        })
+    }
 
     /**
-     * Opens port, writes to device, drains (blocking) and closes
-     * @param {Buffer} outputBuff buffer to write
-     * @returns promise indicating when done
+     * Writes to serial port and waits for echo back to compare 
+     * @param {Buffer} outputBuff buffer to write to port
      */
-    writeToDevice(outputBuff) {
-        const log = new Logger('writeToDevice()', isDevelopment);
-        return new Promise(async (resolve, reject) => {
+    async writeAndCheck(outputBuff) {
+        const log = new Logger('writeAndCheck()', isDevelopment);
+        // Ensure port is open
+        if (this.port.isOpen) {
+            // Write
+            log.subTAG = 'write';
+            try {
+                await new Promise((resolve, reject) => {
+                    this.port.write(outputBuff, (err) => {
+                        if (err) {
+                            log.logErr('', err);
+                            reject({ error: err, errorMsg: 'WRITE_ERR' });
+                        }
+                        // this.port.drain((err) => {
+                        //     if (err) {
+                        //         log.logErr('drain', err);
+                        //         reject({ error: err, errorMsg: 'DRAIN_ERR' })
+                        //     }
+                        resolve();
+                        // }) // end drain()
+                    }) // end write()
+                }) // end write promise
+            } catch (error) {
+                throw error
+            } // end write trycatch
+            // drain and check response
+            log.subTAG = 'read';
+            let readParser;
+            try {
+                this.readBuffer = []
+                const promiseRead = new Promise((resolve, reject) => {
+                    // Create parser callback
+                    log.logInfo('expectedLength', outputBuff.byteLength);
+                    readParser = this.port.pipe(new ByteLength({ length: outputBuff.byteLength }))
+                    readParser.on('data', (data) => {
+                        log.logInfo('received:', data);
+                        const check = Buffer.compare(data, outputBuff) === 0;
+                        log.logInfo('check result:', check);
+                        resolve(check);
+                    });
+                }) // end read promise
 
-            // Open Port
-            this.port.open((err) => {
-                if (err) {
-                    log.logErr('open()', err);
-                    reject({ error: err, errorMsg: 'OPEN_ERR' });
-                }
-            }); // end open()
-            // Send data
-            this.port.write(outputBuff, (err) => {
-                if (err) {
-                    log.logErr('write()', err);
-                    reject({ error: err, errorMsg: 'WRITE_ERR' });
-                }
-            }); // end write()
-            // Drain
-            this.port.drain((err) => {
-                if (err) {
-                    log.logErr('drain()', err);
-                    reject({ error: err, errorMsg: 'OPEN_ERR' });
-                }
-                this.port.close((err) => {
-                    if (err) {
-                        log.logErr('close()', err);
-                        reject({ error: err, errorMsg: 'CLOSE_ERR' });
-                    }
-                    resolve(); // Resolve promise when drain has completed and port is closed
-                }); // end close()
-            }); // end drain()
-        });
-    } // end writeToDevice()
+                const promiseTimeout = new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        console.log(this.readBuffer.length);
+                        reject({ errorMsg: 'Timeout Triggered' })
+                    }, 2 * 1000);
+                }) // end timeout promise
+                const result = await Promise.race([promiseRead, promiseTimeout]);
+                readParser.destroy();
+                return result;
+            } catch (error) {
+                readParser.destroy();
+                throw error;
+            } // end read trycatch
+        }
+        // Port isnt open
+        else {
+            throw Error('port not open');
+        }
+    }
 }

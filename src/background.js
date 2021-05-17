@@ -7,6 +7,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
 import ipcChannels from "./channel_index.js"
 import SerialManager from './native/serial.js'
+import misc from './helpers/misc.js'
 
 // Setting as global object to stop garbage collection
 let win;
@@ -90,9 +91,6 @@ if (isDevelopment) {
 }
 
 
-const timeout = (ms) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 // IPC actions on behalf of render
 // IPC -> Serial
@@ -104,9 +102,23 @@ const serialManager = new SerialManager();
  */
 ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args) => {
   // Port setup
-  await serialManager.connect();
+  try {
+    await serialManager.connect();
+  } catch (error) {
+    console.log(error);
+  }
+  try {
+    // Open serial port
+    await serialManager.open();
+    // Arduino tends to reset when serial port opens, so wait some time for the mcu to be ready
+    await misc.timeout(2000);
+  } catch (error) {
+    console.log(error);
+  }
+
   // Stringify data
   const { anims } = args;
+  let failAttempts = 3;
   for (let index = 0; index < anims.length; index++) {
     const anim = anims[index]; // Current animation
 
@@ -116,11 +128,10 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args)
      */
     // Output string
     const outputBuff = Buffer.alloc(2 + 5 * anim.length)
-    const initByteShift = 10; // Shifts the first two bytes (which are typically < 10) up so they are easy to detect (according to my oscilloscope)
     // Gear
-    outputBuff.writeUInt8(index + initByteShift, 0);
+    outputBuff.writeUInt8(index, 0);
     // Frame Count
-    outputBuff.writeUInt8(anim.length + initByteShift, 1);
+    outputBuff.writeUInt8(anim.length, 1);
     // Animation frames
     anim.forEach((frame, index) => {
       const offset = 2 + index * 5;
@@ -130,8 +141,34 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args)
       outputBuff.writeUInt16BE(frame.timeStamp, offset + 3);
     });
     if (isDevelopment) console.log('outputBuffer', outputBuff);
-    await serialManager.writeToDevice(outputBuff);
-    // TODO Wait for mcu acknowledge
+    // await serialManager.writeToDevice(outputBuff);
+    try {
+      await serialManager.writeAndCheck(outputBuff);
+      // reset fail count
+      failAttempts = 3;
+    } catch (error) {
+      index--;
+      failAttempts--;
+      console.log(error);
+      console.log(`retrying, tries left: ${failAttempts}/3`);
+      if (failAttempts <= 0) {
+        console.log('failed on anim: ', index);
+        try {
+          await serialManager.close();
+        } catch (error) {
+          console.log(error);
+        }
+        win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { msg: 'fail' });
+        return;
+      }
+    }
+    // await misc.timeout(100);
+  } // end write forloop
+  try {
+    await serialManager.close();
+  } catch (error) {
+    console.log(error);
   }
+  console.log('success');
   win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { msg: 'success' })
 })

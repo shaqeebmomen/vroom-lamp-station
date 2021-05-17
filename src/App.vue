@@ -174,6 +174,7 @@ export default {
     const onReset = () => {
       animations.value = []; // Clear array
       defaultAnims.forEach((anim) => {
+        // TODO test to make sure frame isnt copied
         animations.value.push([...anim]);
       });
     };
