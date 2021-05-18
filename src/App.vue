@@ -48,6 +48,7 @@
 </template>
 
 <script>
+// TODO error messages
 import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";

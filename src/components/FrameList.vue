@@ -50,6 +50,8 @@
 </template>
 
 <script>
+// TODO debug error frame checks/unchecks
+// TODO add symmetrical animation creator
 import { nextTick, reactive, ref } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {

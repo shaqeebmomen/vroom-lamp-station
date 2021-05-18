@@ -47,6 +47,7 @@
 </template>
 
 <script>
+// TODO add typed color value inputs
 import { ref, computed, onMounted, watch } from "vue";
 import colorHelp from "../helpers/color_help.js";
 export default {
