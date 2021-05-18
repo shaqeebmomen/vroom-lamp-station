@@ -1,5 +1,6 @@
 import SerialPort from 'serialport';
 import ByteLength from '@serialport/parser-byte-length';
+import Readline from '@serialport/parser-readline';
 import Logger from '../helpers/logger.js'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 import misc from '../helpers/misc.js'
@@ -54,29 +55,25 @@ export default class {
                         return device.serialNumber === this.allowedDevices[0].serialNum && device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
                     }
                 })
-                log.logInfo('Device Found', device);
             } catch (error) {
                 log.logErr('LIST_ERR', error);
                 reject({ error, errorMsg: 'LIST_ERR' });
             }
-
             // if device not found
             if (device === undefined) {
                 log.logErr('NO_DEVICE');
                 // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: 'NO_DEVICE' });
                 reject({ errorMsg: 'NO_DEVICE' })
             }
-
+            log.logInfo('Device Found', device);
             log.subTAG = 'port';
-
             // Open port
             this.port = new SerialPort(device.path, {
-                baudRate: 19200,
+                baudRate: 115200,
                 autoOpen: false,
                 dataBits: 8,
                 stopBits: 1,
                 parity: 'none',
-                highWaterMark: 131072
             })
 
             // Port event listeners
@@ -91,27 +88,31 @@ export default class {
                 else log.logInfo('PORT_CLOSE', err || null, 'Port Event/')
             })
 
-            // this.port.on('data', console.log);
-
+            // Sniffing Serial port
+            if (isDevelopment) this.port.on('data', console.log);
             resolve();
         })// Promise end
     } // end connect()
 
 
-    // TODO blow this function up
     // Open
     open() {
         const log = new Logger('open()', isDevelopment);
         return new Promise((resolve, reject) => {
             // Open Port
-            this.port.open(async (err) => {
-                if (err) {
-                    log.logErr('', err);
-                    reject({ error: err, errorMsg: 'OPEN_ERR' })
-                } else {
-                    resolve();
-                }
-            })
+            if (!this.port.isOpen) {
+                this.port.open(async (err) => {
+                    if (err) {
+                        log.logErr('', err);
+                        reject({ error: err, errorMsg: 'OPEN_ERR' })
+                    } else {
+                        resolve();
+                    }
+                })
+            }
+            else {
+                resolve();
+            }
         })
     }
 
@@ -132,6 +133,34 @@ export default class {
         })
     }
 
+
+    /**
+     * 
+     * @param {Buffer} outputBuff buffer to write
+     */
+    write(outputBuff, timeout) {
+        const log = new Logger('write()', isDevelopment);
+        if (this.port.isOpen) {
+            try {
+                return misc.executeWithTimeout(new Promise((resolve, reject) => {
+                    this.port.write(outputBuff, (err) => {
+                        if (err) {
+                            log.logErr('', err);
+                            reject({ error: err, errorMsg: 'WRITE_ERR' });
+                        }
+                        log.logInfo('Wrote', outputBuff);
+                        resolve();
+                    })
+                }), timeout, new Error('write failed'));
+            } catch (error) {
+                throw error
+            }
+        }
+        else {
+            throw new Error('port not open');
+        }
+    }
+
     /**
      * Writes to serial port and waits for echo back to compare 
      * @param {Buffer} outputBuff buffer to write to port
@@ -143,21 +172,7 @@ export default class {
             // Write
             log.subTAG = 'write';
             try {
-                await new Promise((resolve, reject) => {
-                    this.port.write(outputBuff, (err) => {
-                        if (err) {
-                            log.logErr('', err);
-                            reject({ error: err, errorMsg: 'WRITE_ERR' });
-                        }
-                        // this.port.drain((err) => {
-                        //     if (err) {
-                        //         log.logErr('drain', err);
-                        //         reject({ error: err, errorMsg: 'DRAIN_ERR' })
-                        //     }
-                        resolve();
-                        // }) // end drain()
-                    }) // end write()
-                }) // end write promise
+                await this.write(outputBuff, 2000);
             } catch (error) {
                 throw error
             } // end write trycatch
@@ -165,29 +180,35 @@ export default class {
             log.subTAG = 'read';
             let readParser;
             try {
-                this.readBuffer = []
-                const promiseRead = new Promise((resolve, reject) => {
+                const validate = await misc.executeWithTimeout(new Promise((resolve, reject) => {
                     // Create parser callback
                     log.logInfo('expectedLength', outputBuff.byteLength);
+
                     readParser = this.port.pipe(new ByteLength({ length: outputBuff.byteLength }))
                     readParser.on('data', (data) => {
                         log.logInfo('received:', data);
-                        const check = Buffer.compare(data, outputBuff) === 0;
-                        log.logInfo('check result:', check);
+                        const check = outputBuff.compare(data) === 0;
+                        log.logInfo('check result: ', check ? 'true' : 'false');
                         resolve(check);
                     });
-                }) // end read promise
-
-                const promiseTimeout = new Promise((resolve, reject) => {
-                    setTimeout(() => {
-                        console.log(this.readBuffer.length);
-                        reject({ errorMsg: 'Timeout Triggered' })
-                    }, 2 * 1000);
-                }) // end timeout promise
-                const result = await Promise.race([promiseRead, promiseTimeout]);
+                }), 2000, new Error('Timeout Triggered'));
+                log.logInfo('parser destroyed');
                 readParser.destroy();
-                return result;
+                const lampResponse = Buffer.alloc(1);
+                if (validate) {
+                    // Write back confirmation to mcu
+                    lampResponse.writeUInt8(255);
+                    await this.write(lampResponse, 2000);
+                }
+                else {
+                    await this.write(lampResponse, 2000);
+                    throw new Error('check failed')
+                }
+                log.subTAG = 'final check';
+                log.logInfo('');
+                await this.waitForString("Done", 1000);
             } catch (error) {
+                log.logInfo('parser destroyed');
                 readParser.destroy();
                 throw error;
             } // end read trycatch
@@ -196,5 +217,86 @@ export default class {
         else {
             throw Error('port not open');
         }
+    } // end writeAndCheck()
+
+
+
+    /**
+     * Wait for a specific string from MCU, terminated by a '\n'
+     * @param {String} validString string to look for
+     */
+    async waitForString(validString, timeout) {
+        const log = new Logger('waitForString()', isDevelopment);
+        let readParser;
+        try {
+            await misc.executeWithTimeout(new Promise((resolve, reject) => {
+                readParser = this.port.pipe(new Readline({ delimiter: '\r\n' }));
+                readParser.on('data', (data) => {
+                    log.logInfo('received response', data);
+                    if (validString.localeCompare(data) == 0) {
+                        // String is good, mcu is ready
+                        resolve();
+                    }
+                    else {
+                        reject({ errorMsg: 'HANDSHAKE_ERR' });
+                    }
+                })
+            }), timeout, new Error('Timeout Triggered'))
+            return new Promise((resolve, reject) => {
+                log.logInfo('wait success');
+                log.logInfo('parser destroyed');
+
+                readParser.destroy();
+                resolve();
+            })
+        } catch (error) {
+            log.logErr('wait fail ', error)
+            log.logInfo('parser destroyed');
+            readParser.destroy();
+            throw error;
+        }
     }
+    /** 
+     * Sends a code to the lamp, declaring intent and waits for lamp to send a ready string
+     * @param {String} intentCode  code for lamp to inteperate intent
+     * '[1-6]' -> animation to update 
+     * 'r' -> request for stored animations 
+     */
+    async handshake(intentCode, acceptString) {
+        const log = new Logger('handshake()', isDevelopment);
+        if (this.port.isOpen) {
+            log.subTAG = 'writing';
+            // Write try catch
+            try {
+                // Write Promise
+                await new Promise((resolve, reject) => {
+                    // Send intent code
+                    this.port.write(intentCode + '-', (err) => {
+                        if (err) {
+                            log.logErr('write', err);
+                            reject({ error: err, errorMsg: 'WRITE_ERR' });
+                        }
+                        log.logInfo('wrote: ', intentCode + '-');
+                        resolve();
+                    })
+                }) // end write promise
+            } catch (error) {
+                throw error;
+            } // end write try catch
+            log.subTAG = 'reading';
+            // wait for handshake
+            // read try catch
+            try {
+                log.logInfo('reading for: ', acceptString);
+                return this.waitForString(acceptString, 3000);
+            } catch (error) {
+                throw error;
+            }
+        }
+        else {
+            throw Error('port not open');
+        }
+    } // end handshake()
+
+
 }
