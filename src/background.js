@@ -96,6 +96,8 @@ if (isDevelopment) {
 // IPC actions on behalf of render
 // IPC -> Serial
 const serialManager = new SerialManager();
+const frameSize = 7;
+const metaSize = 2;
 
 // Try catch wrapper for closing serial port
 const closeSerial = async () => {
@@ -140,14 +142,14 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args)
      * [gear(1 byte)][frameCount (1 byte)]...[animationFrame (7 bytes)]*frameCount
      */
     // Output string
-    const outputBuff = Buffer.alloc(2 + 7 * anim.length)
+    const outputBuff = Buffer.alloc(2 + frameSize * anim.length)
     // Gear
     outputBuff.writeUInt8(index, 0);
     // Frame Count
     outputBuff.writeUInt8(anim.length, 1);
     // Animation frames
     anim.forEach((frame, index) => {
-      const offset = 2 + index * 7;
+      const offset = 2 + index * frameSize;
       outputBuff.writeUInt8(frame.color.r, offset, 1);
       outputBuff.writeUInt8(frame.color.g, offset + 1);
       outputBuff.writeUInt8(frame.color.b, offset + 2);
@@ -179,19 +181,64 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
   // Connect To lamp
   await connectToLamp(ipcChannels.download, log);
   log.subTAG = 'Handshake'
-
+  const packetBuffers = []; // Array holding each packet sent
+  // Send request to read code
   try {
-    // Send request to read code
     await serialManager.handshake('d', 'ready_d');
-    // Wait for data to come in
-
   } catch (error) {
-    await closeSerial();
+    log.logErr('', error);
     win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { error, msg: 'fail' });
-  } // End handshake try catch
-  
+  }
+  log.subTAG = 'Getting Anims';
+  for (let i = 0; i < 6; i++) {
+    try {
+      log.logInfo(`Index: ${i}`)
+      await serialManager.writeACK(true);
+      // Wait for frame count
+      const metaData = await serialManager.waitForBytes(metaSize); // Buffer holding data about incoming animation
+      const index = metaData.readUInt8();
+      const frameCount = metaData.readUInt8(1);
+      log.logInfo('Meta data: ', { index, frameCount });
+      // Tell lamp we we can accept incoming animation now
+      await serialManager.writeACK(true);
+      log.logInfo(`Waiting for ${frameCount * frameSize} bytes`);
+      // Wait for data to come in
+      const data = await serialManager.waitForBytes(frameCount * frameSize);
+      log.logInfo('Received', data);
+      packetBuffers.push(data);
+      // Send an acknowledgement byte 
+      await serialManager.writeACK(true);
+    } catch (error) {
+      log.logErr('download failed', error);
+      await closeSerial();
+      win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { error, msg: 'fail' });
+      return;
+    } // End handshake & read  try catch
+  }
+  log.logInfo('read success', packetBuffers);
+
+  const outputAnims = []
+  // Parse animation packets into array object
+  packetBuffers.forEach((animBuff, index) => {
+    const anim = [];
+    for (let i = 0; i < animBuff.byteLength; i += 7) {
+      anim.push({
+        color: {
+          r: animBuff.readUInt8(i),
+          g: animBuff.readUInt8(i+1),
+          b: animBuff.readUInt8(i+2),
+        },
+        timeStamp: animBuff.readUInt32BE(i+3)
+      })
+    }
+    outputAnims[index] = anim;
+  });
+
+  log.logInfo('parse success', outputAnims);
+
   // Send data to front end
-  // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { data, msg: 'success' });
+  await closeSerial();
+  win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { msg: 'success' });
 
 
 })

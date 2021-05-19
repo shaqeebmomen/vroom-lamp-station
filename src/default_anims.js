@@ -2,12 +2,12 @@ export default [
     // Solid White
     [
         { color: { r: 255, g: 255, b: 255 }, timeStamp: 0 },
-        { color: { r: 255, g: 255, b: 255 }, timeStamp: 100 },
+        { color: { r: 255, g: 255, b: 255 }, timeStamp: 500 },
     ],
     // Solid Red
     [
         { color: { r: 255, g: 0, b: 0 }, timeStamp: 0 },
-        { color: { r: 255, g: 0, b: 0 }, timeStamp: 100 },
+        { color: { r: 255, g: 0, b: 0 }, timeStamp: 500 },
     ],
     // Breathe White
     [
@@ -20,7 +20,7 @@ export default [
     // Solid Green
     [
         { color: { r: 0, g: 255, b: 0 }, timeStamp: 0 },
-        { color: { r: 0, g: 255, b: 0 }, timeStamp: 100 },
+        { color: { r: 0, g: 255, b: 0 }, timeStamp: 500 },
     ],
     // Rainbow
     [
@@ -41,6 +41,6 @@ export default [
     // Solid Blue
     [
         { color: { r: 0, g: 0, b: 255 }, timeStamp: 0 },
-        { color: { r: 0, g: 0, b: 255 }, timeStamp: 100 },
+        { color: { r: 0, g: 0, b: 255 }, timeStamp: 500 },
     ],
 ]

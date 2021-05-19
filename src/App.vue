@@ -49,6 +49,7 @@
 
 <script>
 // TODO error messages
+// TODO allow reset when animations are bad
 import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
@@ -166,6 +167,7 @@ export default {
      */
     const download = () => {
       isDownloading.value = true;
+      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.download));
     };
 
     // State Reset
@@ -210,6 +212,7 @@ export default {
 </script>
 
 <style lang="scss">
+@import './assets/sass/main.scss';
 #app {
   display: flex;
   flex-direction: column;

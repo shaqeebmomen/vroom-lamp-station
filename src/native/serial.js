@@ -161,6 +161,21 @@ export default class {
         }
     }
 
+    async writeACK(valid, timeout = 2000) {
+        const log = new Logger('writeACK()', isDevelopment);
+        const response = Buffer.alloc(1);
+        if (valid) {
+            // Write back confirmation to mcu
+            response.writeUInt8(255);
+            log.logInfo('Sent ACK', response);
+            await this.write(response, timeout);
+        }
+        else {
+            await this.write(response, timeout);
+            throw new Error('ack failed')
+        }
+    }
+
     /**
      * Writes to serial port and waits for echo back to compare 
      * @param {Buffer} outputBuff buffer to write to port
@@ -194,16 +209,7 @@ export default class {
                 }), 2000, new Error('Timeout Triggered'));
                 log.logInfo('parser destroyed');
                 readParser.destroy();
-                const lampResponse = Buffer.alloc(1);
-                if (validate) {
-                    // Write back confirmation to mcu
-                    lampResponse.writeUInt8(255);
-                    await this.write(lampResponse, 2000);
-                }
-                else {
-                    await this.write(lampResponse, 2000);
-                    throw new Error('check failed')
-                }
+                await this.writeACK(validate);
                 log.subTAG = 'final check';
                 log.logInfo('');
                 await this.waitForString("Done", 1000);
@@ -220,6 +226,37 @@ export default class {
     } // end writeAndCheck()
 
 
+    /**
+     * Wait for a specific number of bytes to come in
+     * @param {Number} byteCount number of bytes to wait for
+     * @param {Number} timeout timeout to wait for cancellation
+     */
+    async waitForBytes(byteCount, timeout = 2000) {
+        const log = new Logger('waitForBytes()');
+        let readParser;
+        try {
+            const data = await misc.executeWithTimeout(new Promise((resolve, reject) => {
+                readParser = this.port.pipe(new ByteLength({ length: byteCount }));
+                readParser.on('data', (data) => {
+                    log.logInfo('received response', data);
+                    // Pass data to calling scope
+                    resolve(data);
+                })
+            }), timeout, new Error('Timeout Triggered'));
+            return new Promise((resolve, reject) => {
+                log.logInfo('wait success');
+                log.logInfo('parser destroyed');
+                readParser.destroy();
+                resolve(data);
+            })
+        } catch (error) {
+            log.logErr('wait fail');
+            log.logInfo('parser destroyed');
+            readParser.destroy();
+            throw error;
+        }
+
+    }
 
     /**
      * Wait for a specific string from MCU, terminated by a '\n'
@@ -276,7 +313,7 @@ export default class {
                             log.logErr('write', err);
                             reject({ error: err, errorMsg: 'WRITE_ERR' });
                         }
-                        log.logInfo('wrote: ', intentCode + '-');
+                        log.logInfo('Wrote: ', intentCode + '-');
                         resolve();
                     })
                 }) // end write promise
