@@ -120,7 +120,7 @@ const connectToLamp = async (channel, log) => {
     log.logInfo('Connected');
   } catch (error) {
     log.logErr('Could Not Connect', error);
-    win.webContents.send(ipcChannels.getToRenderChannel(channel), { error, msg: 'fail' });
+    win.webContents.send(ipcChannels.getToRenderChannel(channel), { errorMsg: error.message, msg: 'fail' });
     await closeSerial();
   }
 }
@@ -162,7 +162,7 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args)
     } catch (error) {
       log.logErr('Failed to write to device', error);
       await closeSerial();
-      win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error, msg: 'fail' });
+      win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { ...error, msg: 'fail' });
       return;
     }
   } // end write forloop
@@ -187,7 +187,7 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
     await serialManager.handshake('d', 'ready_d');
   } catch (error) {
     log.logErr('', error);
-    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { error, msg: 'fail' });
+    win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { ...error, msg: 'fail' });
   }
   log.subTAG = 'Getting Anims';
   for (let i = 0; i < 6; i++) {
@@ -211,7 +211,7 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
     } catch (error) {
       log.logErr('download failed', error);
       await closeSerial();
-      win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { error, msg: 'fail' });
+      win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { ...error, msg: 'fail' });
       return;
     } // End handshake & read  try catch
   }

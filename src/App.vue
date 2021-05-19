@@ -1,16 +1,22 @@
 <template>
-  <animation-control
-    :isActive="modalActive"
-    @modalClose="closeModal"
-    :animation="animations[activeAnimIndex]"
-    @updateFrameTime="updateFrameTime"
-    @addFrame="addFrame"
-    @removeFrame="removeFrame"
-    @deleteFrame="deleteFrame"
-    @colorChange="colorChange"
-    @resetAnim="onResetSingle"
-    @mirror="onMirror"
-  />
+  <transition name="toast">
+    <toast :msg="toastMessage" :isError="toastIsError" v-if="showToast" />
+  </transition>
+  <transition name="modal">
+    <animation-control
+      v-if="modalActive"
+      :isActive="modalActive"
+      @modalClose="closeModal"
+      :animation="animations[activeAnimIndex]"
+      @updateFrameTime="updateFrameTime"
+      @addFrame="addFrame"
+      @removeFrame="removeFrame"
+      @deleteFrame="deleteFrame"
+      @colorChange="colorChange"
+      @resetAnim="onResetSingle"
+      @mirror="onMirror"
+    />
+  </transition>
   <div class="hero is-small is-primary">
     <div class="hero-body">
       <div class="hero-container">
@@ -49,15 +55,15 @@
 </template>
 
 <script>
-// TODO error messages
 import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 import ipcChannels from "./channel_index.js";
 import defaultAnims from "./default_anims.js";
+import Toast from "./components/Toast.vue";
 export default {
   name: "App",
-  components: { ShifterSelect, AnimationControl },
+  components: { ShifterSelect, AnimationControl, Toast },
   setup(props) {
     // Animations
     const animations = ref([]);
@@ -142,11 +148,20 @@ export default {
 
     // Set up listeners for ipc receive on mount
     onMounted(() => {
-      // TODO frontend error handling
       // Receive after main process uploads
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
-        (response) => {
+        async (response) => {
+          console.log(response);
+          if (response.msg === "fail") {
+            toastIsError.value = true;
+            toastMessage.value = `No Data Written, Error: ${response.errorMsg}`;
+            await displayToast(2000);
+          } else {
+            toastIsError.value = false;
+            toastMessage.value = "Write Success, Lamp Reset and Updated!";
+            await displayToast(1000);
+          }
           isUploading.value = false;
         }
       );
@@ -154,12 +169,36 @@ export default {
       // Receive after main process downlods
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.download),
-        (response) => {
+        async (response) => {
+          console.log(response);
+          if (response.msg === "fail") {
+            toastIsError.value = true;
+            toastMessage.value = `There was an error: ${response.errorMsg}`;
+            await displayToast(2000);
+          } else {
+            toastIsError.value = false;
+            toastMessage.value = "Read Success, UI Updated!";
+            await displayToast(1000);
+          }
           animations.value = response.data;
           isDownloading.value = false;
         }
       );
     });
+
+    const showToast = ref(false);
+    const toastMessage = ref("");
+    const toastIsError = ref(false);
+    const displayToast = (timeout) => {
+      return new Promise((resolve, reject) => {
+        showToast.value = true;
+        const id = setTimeout(() => {
+          showToast.value = false;
+          clearTimeout(id);
+          resolve();
+        }, timeout);
+      });
+    };
 
     /**
      * Attempt to handshake with the lamp
@@ -221,6 +260,9 @@ export default {
       closeModal,
       openModal,
       colorChange,
+      showToast,
+      toastMessage,
+      toastIsError,
       isUploading,
       upload,
       isDownloading,
@@ -280,6 +322,65 @@ export default {
   button {
     display: flex;
     justify-content: space-between;
+  }
+}
+
+// Transition Styling
+// Modal
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-to,
+.modal-leave-from {
+  opacity: 1;
+}
+
+.modal-leave-active,
+.modal-enter-active {
+  transition: all 0.25s ease;
+}
+
+// Toast
+
+.toast-enter-active {
+  animation: wobble 0.5s ease;
+}
+.toast-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-60px);
+}
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+@keyframes wobble {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  60% {
+    transform: translateX(8px);
+  }
+  70% {
+    transform: translateX(-8px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+  90% {
+    transform: translateX(-4px);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 </style>
