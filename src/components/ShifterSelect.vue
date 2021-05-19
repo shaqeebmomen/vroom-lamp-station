@@ -1,27 +1,31 @@
 <template>
   <div class="shifter-select-root">
     <div
-      class="button-container"
-      v-for="(value,index) in [1,3,5,2,4,6]"
+      class="action-container"
+      v-for="(value, index) in [1, 3, 5, 2, 4, 6]"
       :key="index"
       :style="{
         gridColumn: index + 2 > 4 ? ((index + 2) % 4) + 1 : index + 2,
         gridRow: index + 2 > 4 ? 3 : 1,
       }"
     >
-      <button
-        :disabled="isUploading || isDownloading"
-        @click="onClick(value)"
-        :class="{
-          button: true,
-          'is-medium': true,
-          'is-primary': true,
-        }"
-      >
-        {{ value }}
-      </button>
+      <div class="button-container">
+        <button
+          :disabled="isUploading || isDownloading"
+          @click="onClick(value)"
+          :class="{
+            button: true,
+            'is-medium': true,
+            'is-primary': !(errors[value - 1].length > 0),
+            error: errors[value - 1].length > 0,
+            'is-danger': errors[value - 1].length > 0,
+          }"
+        >
+          {{ value }}
+        </button>
+      </div>
     </div>
-    <div class="button-container upload">
+    <div class="action-container upload">
       <button
         :disabled="isUploading || isDownloading"
         :class="{
@@ -39,7 +43,7 @@
         </span>
       </button>
     </div>
-    <div class="button-container download">
+    <div class="action-container download">
       <button
         :disabled="isUploading || isDownloading"
         :class="{
@@ -99,6 +103,9 @@ export default {
     isDownloading: {
       type: Boolean,
     },
+    errors: {
+      type: Array,
+    },
   },
   emits: ["modalOpen", "upload", "download"],
   setup(props, { emit }) {
@@ -120,6 +127,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../assets/sass/main.scss";
 .shifter-select-root {
   width: 50%;
   height: 100%;
@@ -127,7 +135,7 @@ export default {
   display: grid;
   grid-template: 1fr 2fr 1fr / repeat(4, 1fr);
 }
-.button-container {
+.action-container {
   display: grid;
   place-items: center;
 }

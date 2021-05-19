@@ -1,11 +1,9 @@
-
-
 // Set your colors
 $primary: #0b00eb;
 $primary-light: findLightColor($primary);
 $primary-dark: findDarkColor($primary);
 $primary-invert: findColorInvert($primary);
-
+$danger: #ff3467;
 $warning: #ff8800;
 
 $secondary: #4099ff;

@@ -36,21 +36,21 @@
         </div>
       </div>
     </div>
-    <ul ref="list" :class="{ error: errorFrames.value.length > 0 }">
+    <ul ref="list" :class="{ error: errorFrames.length > 0 }">
       <frame-item
         v-for="(item, index) in animation"
         :key="index"
         :frame="item"
         :isActiveItem="index == activeIndex"
         :index="index"
+        :error="errorFrames.includes(index)"
         @updateFrameIndex="updateFrameIndex"
         @updateFrameTime="updateFrameTime"
         @deleteFrame="deleteFrame"
-        :error="errorFrames.value.includes(index)"
       />
     </ul>
-    <p class="help is-danger" v-if="errorFrames.value.length > 0">
-      {{ `Invalid Timestamps ( ${errorFrames.value.length} )` }}
+    <p class="help is-danger" v-if="errorFrames.length > 0">
+      {{ `Invalid Timestamps ( ${errorFrames.length} )` }}
     </p>
     <p class="help is-danger" v-if="animation.length > 19">
       Reached 20 Frame Limit!
@@ -59,10 +59,12 @@
 </template>
 
 <script>
+// TODO transition group
 import { nextTick, reactive, ref, watch } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
   components: { FrameItem },
+
   emits: [
     "addFrame",
     "removeFrame",
@@ -71,39 +73,12 @@ export default {
     "updateFrameTime",
     "mirror",
   ],
-  props: ["animation", "activeIndex", "wasReset"],
+  props: ["animation", "activeIndex","errorFrames"],
   setup(props, { emit }) {
     const list = ref(null);
-    const errorFrames = reactive({ value: [] });
-
-    // Reset errors if animation was reset
-    watch(
-      () => props.wasReset,
-      (newVal, oldVal) => {
-        if (newVal) errorFrames.value = [];
-      }
-    );
 
     const updateFrameTime = (data) => {
-      // If the intent timestamp change is less than the previous frame or greater than the next
-      if (
-        isNaN(data.timeStamp) ||
-        (data.index > 0 &&
-          props.animation[data.index - 1].timeStamp > data.timeStamp) ||
-        (data.index < props.animation.length - 1 &&
-          props.animation[data.index + 1].timeStamp < data.timeStamp)
-      ) {
-        // Dont emit anything and add this frame to the error list if not already there
-        if (!errorFrames.value.includes(data.index)) {
-          errorFrames.value.push(data.index);
-        }
-      } else {
-        // Data is good, remove the frame from the error list and emit event accordingly
-        errorFrames.value = errorFrames.value.filter((val) => {
-          return val != data.index;
-        });
-        emit("updateFrameTime", data);
-      }
+      emit("updateFrameTime", data);
     };
 
     const scrollToFrame = (index) => {
@@ -149,7 +124,6 @@ export default {
 
     return {
       list,
-      errorFrames,
       addFrame,
       removeFrame,
       deleteFrame,

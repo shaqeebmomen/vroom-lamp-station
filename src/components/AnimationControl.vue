@@ -3,7 +3,7 @@
     <div class="modal-background" @click="onClose"></div>
     <div class="modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title">Create Animation</p>
+        <p class="modal-card-title">Create Animation {{ activeAnimIndex }}</p>
       </header>
       <section class="modal-card-body">
         <div class="color-display-container">
@@ -23,6 +23,7 @@
               :animation="animation"
               :activeIndex="activeIndex"
               :wasReset="wasReset"
+              :errorFrames="errorFrames"
               class="frame-list mt-2"
               @updateFrameIndex="updateFrameIndex"
               @updateFrameTime="updateFrameTime"
@@ -65,6 +66,12 @@ export default {
     },
     animation: {
       type: Array,
+    },
+    errorFrames: {
+      type: Array,
+    },
+    activeAnimIndex: {
+      type: Number,
     },
   },
   emits: [

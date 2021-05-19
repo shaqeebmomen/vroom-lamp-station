@@ -120,7 +120,7 @@ const connectToLamp = async (channel, log) => {
     log.logInfo('Connected');
   } catch (error) {
     log.logErr('Could Not Connect', error);
-    win.webContents.send(ipcChannels.getToRenderChannel(channel), { errorMsg: error.message, msg: 'fail' });
+    win.webContents.send(ipcChannels.getToRenderChannel(channel), { errorMsg: error.message || error.errorMsg, msg: 'fail' });
     await closeSerial();
   }
 }

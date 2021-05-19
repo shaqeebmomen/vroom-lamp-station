@@ -6,8 +6,10 @@
     <animation-control
       v-if="modalActive"
       :isActive="modalActive"
-      @modalClose="closeModal"
       :animation="animations[activeAnimIndex]"
+      :errorFrames="errors[activeAnimIndex]"
+      :activeAnimIndex="activeAnimIndex + 1"
+      @modalClose="closeModal"
       @updateFrameTime="updateFrameTime"
       @addFrame="addFrame"
       @removeFrame="removeFrame"
@@ -41,6 +43,7 @@
       <shifter-select
         :isDownloading="isDownloading"
         :isUploading="isUploading"
+        :errors="errors"
         @modalOpen="openModal"
         @upload="upload"
         @download="download"
@@ -55,7 +58,16 @@
 </template>
 
 <script>
-import { nextTick, onMounted, ref, toRaw } from "vue";
+import {
+  computed,
+  nextTick,
+  onMounted,
+  reactive,
+  ref,
+  toRaw,
+  watch,
+  watchEffect,
+} from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 import ipcChannels from "./channel_index.js";
@@ -69,6 +81,7 @@ export default {
     const animations = ref([]);
     // Copy data from default animatinos file into ref
 
+    // TODO check errors are cleared
     const resetSingle = (index) => {
       animations.value[index] = [];
       defaultAnims[index].forEach((frame) => {
@@ -82,14 +95,45 @@ export default {
       }
     };
 
-    resetAll();
-
     const activeAnimIndex = ref(1);
+
+    // Holds which frames of which animations hold errors
+    const errors = ref([[], [], [], [], [], []]);
+    const animsValid = computed(() => {
+      let out = true;
+      errors.value.forEach((arr) => {
+        if (arr.length > 0) out = false;
+      });
+      return out;
+    });
+
+    watch(
+      () => [...animations.value],
+      () => {
+        errors.value[activeAnimIndex.value] = [];
+        // Evaluate which frames have errors in the timestamps
+        let currentHigh = 0;
+        for (
+          let index = 1;
+          index < animations.value[activeAnimIndex.value].length;
+          index++
+        ) {
+          const _frame = animations.value[activeAnimIndex.value][index];
+          if (_frame.timeStamp > currentHigh) {
+            currentHigh = _frame.timeStamp;
+          } else {
+            errors.value[activeAnimIndex.value].push(index);
+          }
+        }
+      },
+      { deep: true, flush: "post" }
+    );
 
     /**
      * Update the timestamp of a frame
      */
     const updateFrameTime = (data) => {
+      // Frame data validation
       animations.value[activeAnimIndex.value][data.index].timeStamp =
         data.timeStamp;
     };
@@ -148,19 +192,26 @@ export default {
 
     // Set up listeners for ipc receive on mount
     onMounted(() => {
+      // Reset Animations
+      resetAll();
+
       // Receive after main process uploads
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
         async (response) => {
           console.log(response);
           if (response.msg === "fail") {
-            toastIsError.value = true;
-            toastMessage.value = `No Data Written, Error: ${response.errorMsg}`;
-            await displayToast(2000);
+            await displayToast(
+              `No Data Written, Error: ${response.errorMsg}`,
+              true,
+              2000
+            );
           } else {
-            toastIsError.value = false;
-            toastMessage.value = "Write Success, Lamp Reset and Updated!";
-            await displayToast(1000);
+            await displayToast(
+              "Write Success, Lamp Reset and Updated!",
+              false,
+              1000
+            );
           }
           isUploading.value = false;
         }
@@ -172,15 +223,17 @@ export default {
         async (response) => {
           console.log(response);
           if (response.msg === "fail") {
-            toastIsError.value = true;
-            toastMessage.value = `There was an error: ${response.errorMsg}`;
-            await displayToast(2000);
+            await displayToast(
+              `There was an error: ${response.errorMsg}`,
+              true,
+              2000
+            );
           } else {
-            toastIsError.value = false;
-            toastMessage.value = "Read Success, UI Updated!";
-            await displayToast(1000);
+            await displayToast("Read Success, UI Updated!", false, 1000);
           }
-          animations.value = response.data;
+          for (let index = 0; index < animations.value.length; index++) {
+            animations.value[index] = response.data[index];
+          }
           isDownloading.value = false;
         }
       );
@@ -189,7 +242,9 @@ export default {
     const showToast = ref(false);
     const toastMessage = ref("");
     const toastIsError = ref(false);
-    const displayToast = (timeout) => {
+    const displayToast = (message, isError, timeout) => {
+      toastMessage.value = message;
+      toastIsError.value = isError;
       return new Promise((resolve, reject) => {
         showToast.value = true;
         const id = setTimeout(() => {
@@ -203,12 +258,17 @@ export default {
     /**
      * Attempt to handshake with the lamp
      */
-    const upload = () => {
+    const upload = async () => {
       isUploading.value = true;
-      const anims = toRaw(animations)._rawValue;
-      window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
-        anims,
-      });
+      if (animsValid.value) {
+        const anims = toRaw(animations.value)._rawValue;
+        window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
+          anims,
+        });
+      } else {
+        await displayToast("Please Check Red Animations!", true, 1000);
+        isUploading.value = false;
+      }
     };
 
     /**
@@ -218,7 +278,7 @@ export default {
       isDownloading.value = true;
       window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.download));
     };
-
+    1;
     // State Reset
     /**
      * Clear out all the data in animations
@@ -252,6 +312,8 @@ export default {
     return {
       animations,
       activeAnimIndex,
+      errors,
+      animsValid,
       updateFrameTime,
       addFrame,
       removeFrame,
