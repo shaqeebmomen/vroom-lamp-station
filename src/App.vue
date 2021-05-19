@@ -8,7 +8,7 @@
     @removeFrame="removeFrame"
     @deleteFrame="deleteFrame"
     @colorChange="colorChange"
-    @resetAnim="resetAnim"
+    @resetAnim="onResetSingle"
   />
   <div class="hero is-small is-primary">
     <div class="hero-body">
@@ -18,7 +18,7 @@
         </div>
         <div class="refresh-container">
           <button
-            @click="resetAll"
+            @click="onResetAll"
             class="button is-small is-outlined m-4 p-5 is-rounded"
           >
             <span class="icon is-large">
@@ -49,7 +49,6 @@
 
 <script>
 // TODO error messages
-// TODO allow reset when animations are bad
 import { nextTick, onMounted, ref, toRaw } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
@@ -62,10 +61,21 @@ export default {
     // Animations
     const animations = ref([]);
     // Copy data from default animatinos file into ref
-    for (let index = 0; index < defaultAnims.length; index++) {
-      animations.value.push([]);
-      animations.value[index] = [...defaultAnims[index]];
-    }
+
+    const resetSingle = (index) => {
+      animations.value[index] = [];
+      defaultAnims[index].forEach((frame) => {
+        animations.value[index].push(JSON.parse(JSON.stringify(frame)));
+      });
+    };
+
+    const resetAll = () => {
+      for (let index = 0; index < defaultAnims.length; index++) {
+        resetSingle(index);
+      }
+    };
+
+    resetAll();
 
     const activeAnimIndex = ref(1);
 
@@ -122,9 +132,7 @@ export default {
 
     // Color Change
     const colorChange = (data) => {
-      animations.value[activeAnimIndex.value][data.index].color = {
-        ...data.color,
-      };
+      animations.value[activeAnimIndex.value][data.index].color = data.color;
     };
 
     // Connection
@@ -138,7 +146,6 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
         (data) => {
-          
           isUploading.value = false;
         }
       );
@@ -147,7 +154,6 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.download),
         (data) => {
-          
           isDownloading.value = false;
         }
       );
@@ -176,19 +182,12 @@ export default {
     /**
      * Clear out all the data in animations
      */
-    const resetAll = () => {
-      animations.value = []; // Clear array
-      defaultAnims.forEach((anim) => {
-        // TODO test to make sure frame isnt copied
-        animations.value.push([...anim]);
-      });
+    const onResetAll = () => {
+      resetAll();
     };
 
-    const resetAnim = () => {
-      animations.value[activeAnimIndex.value] = [];
-      defaultAnims[activeAnimIndex.value].forEach((defaultFrame) => {
-        animations.value[activeAnimIndex.value].push({ ...defaultFrame });
-      });
+    const onResetSingle = () => {
+      resetSingle(activeAnimIndex.value);
     };
 
     return {
@@ -206,15 +205,15 @@ export default {
       upload,
       isDownloading,
       download,
-      resetAll,
-      resetAnim,
+      onResetAll,
+      onResetSingle,
     };
   },
 };
 </script>
 
 <style lang="scss">
-@import './assets/sass/main.scss';
+@import "./assets/sass/main.scss";
 #app {
   display: flex;
   flex-direction: column;

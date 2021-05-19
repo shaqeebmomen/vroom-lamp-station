@@ -9,7 +9,6 @@
     @click="updateFrameIndex"
   >
     <div class="color-box level-left" :style="{ background: color }"></div>
-    <!-- TODO bind number here to timestamps ni animation object -->
     <input
       type="number"
       :disabled="index == 0"
