@@ -9,6 +9,7 @@
     @deleteFrame="deleteFrame"
     @colorChange="colorChange"
     @resetAnim="onResetSingle"
+    @mirror="onMirror"
   />
   <div class="hero is-small is-primary">
     <div class="hero-body">
@@ -145,7 +146,7 @@ export default {
       // Receive after main process uploads
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
-        (data) => {
+        (response) => {
           isUploading.value = false;
         }
       );
@@ -153,7 +154,8 @@ export default {
       // Receive after main process downlods
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.download),
-        (data) => {
+        (response) => {
+          animations.value = response.data;
           isDownloading.value = false;
         }
       );
@@ -190,6 +192,24 @@ export default {
       resetSingle(activeAnimIndex.value);
     };
 
+    const onMirror = () => {
+      const size = animations.value[activeAnimIndex.value].length;
+      for (let index = size - 2; index >= 0; index--) {
+        const { r, g, b } = animations.value[activeAnimIndex.value][
+          index
+        ].color;
+        const time =
+          animations.value[activeAnimIndex.value][size - 1].timeStamp +
+          (animations.value[activeAnimIndex.value][size - 1].timeStamp -
+            animations.value[activeAnimIndex.value][index].timeStamp);
+
+        animations.value[activeAnimIndex.value].push({
+          color: { r, g, b },
+          timeStamp: time,
+        });
+      }
+    };
+
     return {
       animations,
       activeAnimIndex,
@@ -207,6 +227,7 @@ export default {
       download,
       onResetAll,
       onResetSingle,
+      onMirror,
     };
   },
 };

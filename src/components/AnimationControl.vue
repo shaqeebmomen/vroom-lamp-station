@@ -29,6 +29,7 @@
               @addFrame="addFrame"
               @removeFrame="removeFrame"
               @deleteFrame="deleteFrame"
+              @mirror="mirror"
             />
           </div>
         </div>
@@ -74,6 +75,7 @@ export default {
     "deleteFrame",
     "colorChange",
     "resetAnim",
+    "mirror",
   ],
   setup(props, { emit }) {
     const gradientString = computed(() => {
@@ -141,6 +143,10 @@ export default {
       });
     };
 
+    const mirror = () => {
+      emit("mirror");
+    };
+
     return {
       gradientString,
       activeIndex,
@@ -153,6 +159,7 @@ export default {
       colorChange,
       onReset,
       wasReset,
+      mirror,
     };
   },
 };

@@ -1,59 +1,108 @@
 <template>
   <div class="color-picker-root mt-2">
     <div class="display" :style="{ background: currentCol }"></div>
+    <!-- RED -->
     <div class="row level red">
-      <h1 class="title is-3 level-left mb-1">R</h1>
-      <input
-        v-model="currentR"
-        min="0"
-        max="255"
-        step="1"
-        type="range"
-        class="ml-4 slider level-item"
-      />
-      <div class="readout level-left ml-2">
-        {{ currentR }}
+      <div class="level-left">
+        <div class="level-item">
+          <h1 class="title is-3 mb-1">R</h1>
+        </div>
+      </div>
+      <div class="level-item">
+        <input
+          v-model="currentR"
+          min="0"
+          max="255"
+          step="1"
+          type="range"
+          class="slider"
+        />
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <input
+            type="number"
+            min="0"
+            max="255"
+            step="1"
+            v-model="currentR"
+            class="input readout"
+          />
+        </div>
       </div>
     </div>
+    <!-- GREEN -->
     <div class="row level green">
-      <h1 class="title is-3 level-left mb-1">G</h1>
-      <input
-        v-model="currentG"
-        min="0"
-        max="255"
-        step="1"
-        type="range"
-        class="ml-4 slider level-item"
-      />
-      <div class="readout level-left ml-2">
-        {{ currentG }}
+      <div class="level-left">
+        <div class="level-item">
+          <h1 class="title is-3 mb-1">G</h1>
+        </div>
+      </div>
+      <div class="level-item">
+        <input
+          v-model="currentG"
+          min="0"
+          max="255"
+          step="1"
+          type="range"
+          class="slider"
+        />
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <input
+            type="number"
+            min="0"
+            max="255"
+            step="1"
+            v-model="currentG"
+            class="input readout"
+          />
+        </div>
       </div>
     </div>
+    <!-- BLUE -->
     <div class="row level blue">
-      <h1 class="title is-3 level-left mb-1">B</h1>
-      <input
-        v-model="currentB"
-        min="0"
-        max="255"
-        step="1"
-        type="range"
-        class="ml-4 slider level-item"
-      />
-      <div class="readout level-left ml-2">
-        {{ currentB }}
+      <div class="level-left">
+        <div class="level-item">
+          <h1 class="title is-3 mb-1">B</h1>
+        </div>
+      </div>
+      <div class="level-item">
+        <input
+          v-model="currentB"
+          min="0"
+          max="255"
+          step="1"
+          type="range"
+          class="slider"
+        />
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <input
+            type="number"
+            min="0"
+            max="255"
+            step="1"
+            v-model="currentB"
+            class="input readout"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// TODO add typed color value inputs
+
 import { ref, computed, onMounted, watch } from "vue";
 import colorHelp from "../helpers/color_help.js";
 export default {
   props: ["activeColor"],
   emits: ["colorChange"],
   setup(props, { emit }) {
+   
     const currentR = ref(props.activeColor.r);
     const currentG = ref(props.activeColor.g);
     const currentB = ref(props.activeColor.b);
@@ -106,6 +155,7 @@ h1 {
 .readout {
   text-align: center;
   min-width: 2rem;
+  max-width: 5rem;
 }
 
 .display {
@@ -120,6 +170,7 @@ h1 {
 // Slider styling
 $slider-height: 15px;
 .slider {
+  width: 80%;
   -webkit-appearance: none;
   height: $slider-height;
   background: #d3d3d3;

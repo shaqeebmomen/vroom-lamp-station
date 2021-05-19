@@ -16,6 +16,15 @@
             </span>
           </button>
           <button
+            :disabled="animation.length > 10 || animation.length < 2"
+            class="button is-small"
+            @click="mirror"
+          >
+            <span class="icon">
+              <i class="mdi mdi-mirror"></i>
+            </span>
+          </button>
+          <button
             :disabled="animation.length > 19"
             class="button is-small"
             @click="addFrame"
@@ -50,8 +59,6 @@
 </template>
 
 <script>
-// TODO debug error frame checks/unchecks
-// TODO add symmetrical animation creator
 import { nextTick, reactive, ref, watch } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
@@ -62,6 +69,7 @@ export default {
     "deleteFrame",
     "updateFrameIndex",
     "updateFrameTime",
+    "mirror",
   ],
   props: ["animation", "activeIndex", "wasReset"],
   setup(props, { emit }) {
@@ -135,6 +143,10 @@ export default {
       });
     };
 
+    const mirror = () => {
+      emit("mirror");
+    };
+
     return {
       list,
       errorFrames,
@@ -143,6 +155,7 @@ export default {
       deleteFrame,
       updateFrameIndex,
       updateFrameTime,
+      mirror,
     };
   },
 };
