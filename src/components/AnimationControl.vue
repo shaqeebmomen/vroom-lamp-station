@@ -22,6 +22,7 @@
             <frame-list
               :animation="animation"
               :activeIndex="activeIndex"
+              :wasReset="wasReset"
               class="frame-list mt-2"
               @updateFrameIndex="updateFrameIndex"
               @updateFrameTime="updateFrameTime"
@@ -130,9 +131,14 @@ export default {
       emit("colorChange", { index: activeIndex.value, color: { ...data } });
     };
 
+    const wasReset = ref(false);
     // Reset
     const onReset = () => {
       emit("resetAnim");
+      wasReset.value = true;
+      nextTick(() => {
+        wasReset.value = false;
+      });
     };
 
     return {
@@ -146,6 +152,7 @@ export default {
       updateFrameTime,
       colorChange,
       onReset,
+      wasReset,
     };
   },
 };

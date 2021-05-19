@@ -36,7 +36,7 @@ async function createWindow() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    // if (!process.env.IS_TEST) win.webContents.openDevTools()
+    if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
     createProtocol('app')
     // Load the index.html when not in development
@@ -225,10 +225,10 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
       anim.push({
         color: {
           r: animBuff.readUInt8(i),
-          g: animBuff.readUInt8(i+1),
-          b: animBuff.readUInt8(i+2),
+          g: animBuff.readUInt8(i + 1),
+          b: animBuff.readUInt8(i + 2),
         },
-        timeStamp: animBuff.readUInt32BE(i+3)
+        timeStamp: animBuff.readUInt32BE(i + 3)
       })
     }
     outputAnims[index] = anim;
@@ -238,7 +238,7 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
 
   // Send data to front end
   await closeSerial();
-  win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { msg: 'success' });
+  win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.download), { data: [...outputAnims], msg: 'success' });
 
 
 })

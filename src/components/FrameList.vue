@@ -52,7 +52,7 @@
 <script>
 // TODO debug error frame checks/unchecks
 // TODO add symmetrical animation creator
-import { nextTick, reactive, ref } from "vue";
+import { nextTick, reactive, ref, watch } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
   components: { FrameItem },
@@ -63,10 +63,19 @@ export default {
     "updateFrameIndex",
     "updateFrameTime",
   ],
-  props: ["animation", "activeIndex"],
+  props: ["animation", "activeIndex", "wasReset"],
   setup(props, { emit }) {
     const list = ref(null);
     const errorFrames = reactive({ value: [] });
+
+    // Reset errors if animation was reset
+    watch(
+      () => props.wasReset,
+      (newVal, oldVal) => {
+        if (newVal) errorFrames.value = [];
+      }
+    );
+
     const updateFrameTime = (data) => {
       // If the intent timestamp change is less than the previous frame or greater than the next
       if (

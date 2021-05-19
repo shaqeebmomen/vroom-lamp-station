@@ -18,7 +18,7 @@
         </div>
         <div class="refresh-container">
           <button
-            @click="onReset"
+            @click="resetAll"
             class="button is-small is-outlined m-4 p-5 is-rounded"
           >
             <span class="icon is-large">
@@ -138,6 +138,7 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
         (data) => {
+          
           isUploading.value = false;
         }
       );
@@ -146,6 +147,7 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.download),
         (data) => {
+          
           isDownloading.value = false;
         }
       );
@@ -174,7 +176,7 @@ export default {
     /**
      * Clear out all the data in animations
      */
-    const onReset = () => {
+    const resetAll = () => {
       animations.value = []; // Clear array
       defaultAnims.forEach((anim) => {
         // TODO test to make sure frame isnt copied
@@ -204,7 +206,7 @@ export default {
       upload,
       isDownloading,
       download,
-      onReset,
+      resetAll,
       resetAnim,
     };
   },
