@@ -15,25 +15,19 @@ export default class {
             {
                 vid: '1A86',
                 pid: '7523',
-                serialNum: '5&30920091&0&5'
             },
             // Serial Tester info
             {
                 vid: '10C4',
                 pid: 'EA60',
-                serialNum: '0001',
-
             },
 
             // Monitor
             {
                 vid: '2A03',
                 pid: '0043',
-                serialNum: '55632313838351215180',
             }
         ]
-
-
     }
 
     // Searches for lamp among connected devices
@@ -46,11 +40,11 @@ export default class {
             device = (await SerialPort.list()).find((device) => {
                 if (isDevelopment) {
                     return this.allowedDevices.find((allowedDevice) => {
-                        return allowedDevice.vid === device.vendorId && allowedDevice.pid === device.productId && allowedDevice.serialNum === device.serialNumber;
+                        return allowedDevice.vid === device.vendorId && allowedDevice.pid === device.productId;
                     })
                 }
                 else {
-                    return device.serialNumber === this.allowedDevices[0].serialNum && device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
+                    return device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
                 }
             })
         } catch (error) {

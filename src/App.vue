@@ -67,7 +67,7 @@ import Toast from "./components/Toast.vue";
 export default {
   name: "App",
   components: { ShifterSelect, AnimationControl, Toast },
-  setup(props) {
+  setup() {
     // Animations
     const animations = ref([]);
     // Copy data from default animatinos file into ref
@@ -233,7 +233,7 @@ export default {
     const displayToast = (message, isError, timeout) => {
       toastMessage.value = message;
       toastIsError.value = isError;
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         showToast.value = true;
         const id = setTimeout(() => {
           showToast.value = false;

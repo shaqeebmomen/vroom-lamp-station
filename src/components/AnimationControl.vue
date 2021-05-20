@@ -110,7 +110,7 @@ export default {
 
     watch(
       () => props.animation,
-      (newVal, oldVal) => {
+      () => {
         updateFrameIndex(0);
       }
     );

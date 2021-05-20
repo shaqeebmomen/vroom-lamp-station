@@ -51,7 +51,7 @@ export default {
 
     watch(
       () => timeStamp.value,
-      (newVal, oldVal) => {
+      (newVal) => {
         const data = {
           timeStamp: parseInt(newVal),
           index: props.index,
@@ -61,7 +61,7 @@ export default {
     );
     watch(
       () => props.frame.timeStamp,
-      (newVal, oldVal) => {
+      (newVal) => {
         timeStamp.value = newVal;
       }
     );

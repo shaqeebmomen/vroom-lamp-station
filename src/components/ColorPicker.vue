@@ -123,7 +123,7 @@ export default {
 
     watch(
       () => props.activeColor,
-      (newVal, oldVal) => {
+      (newVal) => {
         currentR.value = newVal.r.toString();
         currentG.value = newVal.g.toString();
         currentB.value = newVal.b.toString();
