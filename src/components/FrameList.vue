@@ -7,7 +7,7 @@
       <div class="level-right">
         <div class="buttons">
           <button
-            :disabled="animation.length < 2"
+            :disabled="animation.length <= 2"
             class="button is-small"
             @click="removeFrame"
           >
@@ -42,8 +42,8 @@
       name="list"
       tag="ul"
       :class="{ error: errorFrames.length > 0 }"
-      @after-enter="updateListUI('add')"
-      @after-leave="updateListUI('delete')"
+      @after-enter="updateListUI"
+      @after-leave="updateListUI"
     >
       <frame-item
         v-for="(item, index) in animation"
@@ -84,7 +84,9 @@ export default {
   props: ["animation", "activeIndex", "errorFrames"],
   setup(props, { emit }) {
     let list;
+    let mounted = false;
     onMounted(() => {
+      mounted = true;
       list = document.querySelector("ul");
     });
 
@@ -99,8 +101,10 @@ export default {
       });
     };
 
+    let nextIndex;
     const updateFrameIndex = (index) => {
       emit("updateFrameIndex", index);
+      nextIndex = index;
     };
 
     const addFrame = () => {
@@ -117,10 +121,8 @@ export default {
       emit("removeFrame");
     };
 
-    let deletedIndex;
     const deleteFrame = (index) => {
       updateFrameIndex(index - 1);
-      deletedIndex = index;
       nextTick(() => {
         emit("deleteFrame", index);
       });
@@ -130,15 +132,14 @@ export default {
       emit("mirror");
     };
 
-    const updateListUI = (source) => {
-      let index = 0;
-      if (source === "add") {
-        index = list.children.length - 1;
-      } else if (source === "delete") {
-        index = deletedIndex - 1;
+    const updateListUI = () => {
+      // console.log(list);
+      if (mounted && list.children[nextIndex] !== undefined) {
+        nextTick(() => {
+          list.children[nextIndex].children.namedItem("input").focus();
+          scrollToFrame(nextIndex);
+        });
       }
-      list.children[index].children.namedItem("input").focus();
-      scrollToFrame(index);
     };
 
     return {
@@ -192,14 +193,14 @@ ul {
   transform: scale(1);
 }
 .list-enter-active {
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 
 .list-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
   /* Using this to take the element out of the document flow and enable the .move class to apply its transition */
   /* This works because the parent was positioned relative (the ul) */
-  position: absolute;
+  // position: absolute;
 }
 
 /* used for when items in a transition group move, this is an "active" class that defines a transition */

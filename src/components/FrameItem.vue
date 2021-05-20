@@ -42,7 +42,6 @@
 <script>
 import { onMounted, computed, watch, ref } from "vue";
 import colorHelp from "../helpers/color_help.js";
-var debounce = require("lodash.debounce");
 
 export default {
   emit: ["deleteFrame", "updateFrameIndex", "updateFrameTime"],
