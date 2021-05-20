@@ -29,7 +29,7 @@
       <button
         class="button is-rounded is-danger is-small is-outlined close p-4"
         @click.stop="deleteFrame(index)"
-        :disabled="index == 0"
+        :disabled="deleteEnable"
       >
         <span class="icon">
           <i class="mdi mdi-18px mdi-close"></i>
@@ -46,7 +46,7 @@ var debounce = require("lodash.debounce");
 
 export default {
   emit: ["deleteFrame", "updateFrameIndex", "updateFrameTime"],
-  props: ["frame", "index", "isActiveItem", "error"],
+  props: ["frame", "index", "isActiveItem", "error", "deleteEnable"],
   setup(props, { emit }) {
     const timeStamp = ref(props.frame.timeStamp);
 

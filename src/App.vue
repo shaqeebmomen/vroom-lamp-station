@@ -81,7 +81,6 @@ export default {
     const animations = ref([]);
     // Copy data from default animatinos file into ref
 
-    // TODO check errors are cleared
     const resetSingle = (index) => {
       animations.value[index] = [];
       defaultAnims[index].forEach((frame) => {

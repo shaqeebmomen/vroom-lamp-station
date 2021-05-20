@@ -36,19 +36,25 @@
         </div>
       </div>
     </div>
-    <ul ref="list" :class="{ error: errorFrames.length > 0 }">
+    <transition-group
+      appear
+      name="list"
+      tag="ul"
+      :class="{ error: errorFrames.length > 0 }"
+    >
       <frame-item
         v-for="(item, index) in animation"
-        :key="index"
+        :key="item"
         :frame="item"
         :isActiveItem="index == activeIndex"
         :index="index"
         :error="errorFrames.includes(index)"
+        :deleteEnable="index == 0 || (index == 1 && animation.length < 3)"
         @updateFrameIndex="updateFrameIndex"
         @updateFrameTime="updateFrameTime"
         @deleteFrame="deleteFrame"
       />
-    </ul>
+    </transition-group>
     <p class="help is-danger" v-if="errorFrames.length > 0">
       {{ `Invalid Timestamps ( ${errorFrames.length} )` }}
     </p>
@@ -59,8 +65,7 @@
 </template>
 
 <script>
-// TODO transition group
-import { nextTick, reactive, ref, watch } from "vue";
+import { nextTick, onMounted, reactive, ref, watch } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
   components: { FrameItem },
@@ -73,16 +78,19 @@ export default {
     "updateFrameTime",
     "mirror",
   ],
-  props: ["animation", "activeIndex","errorFrames"],
+  props: ["animation", "activeIndex", "errorFrames"],
   setup(props, { emit }) {
-    const list = ref(null);
+    let list;
+    onMounted(() => {
+      list = document.querySelector("ul");
+    });
 
     const updateFrameTime = (data) => {
       emit("updateFrameTime", data);
     };
 
     const scrollToFrame = (index) => {
-      list.value.children[index].scrollIntoView({
+      list.children[index].scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
@@ -90,14 +98,14 @@ export default {
 
     const updateFrameIndex = (index) => {
       emit("updateFrameIndex", index);
-      list.value.children[index].children.namedItem("input").focus();
+      list.children[index].children.namedItem("input").focus();
       scrollToFrame(index);
     };
 
     const addFrame = () => {
       emit("addFrame");
       nextTick(() => {
-        updateFrameIndex(list.value.children.length - 1);
+        updateFrameIndex(list.children.length - 1);
       });
     };
 
@@ -158,5 +166,32 @@ ul {
   &.error {
     border: 1px $danger solid;
   }
+}
+
+// Transition Group
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.list-enter-to,
+.list-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+.list-enter-active {
+  transition: all 0.3s ease;
+}
+
+.list-leave-active {
+  transition: all 0.3s ease;
+  /* Using this to take the element out of the document flow and enable the .move class to apply its transition */
+  /* This works because the parent was positioned relative (the ul) */
+  position: absolute;
+}
+
+/* used for when items in a transition group move, this is an "active" class that defines a transition */
+.list-move {
+  transition: all 0.3s ease;
 }
 </style>
