@@ -118,10 +118,12 @@ const connectToLamp = async (channel, log) => {
     // Arduino tends to reset when serial port opens, so wait some time for the mcu to be ready
     await serialManager.waitForString('ready', 3000); // Wait for mcu to send ready string after reset
     log.logInfo('Connected');
+    return true;
   } catch (error) {
     log.logErr('Could Not Connect', error);
     win.webContents.send(ipcChannels.getToRenderChannel(channel), { errorMsg: error.message || error.errorMsg, msg: 'fail' });
     await closeSerial();
+    return false;
   }
 }
 
@@ -131,7 +133,9 @@ const connectToLamp = async (channel, log) => {
 ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.upload), async (event, args) => {
   const log = new Logger('IPC_Upload', isDevelopment);
   log.subTAG = 'Connecting';
-  await connectToLamp(ipcChannels.upload, log);
+  if (!(await connectToLamp(ipcChannels.upload, log))) {
+    return;
+  }
   log.subTAG = 'Writing';
   // Stringify data
   const { anims } = args;
@@ -179,7 +183,9 @@ ipcMain.on(ipcChannels.getToMainChannel(ipcChannels.download), async (event, arg
   const log = new Logger('IPC_Download', isDevelopment);
   log.subTAG = 'Connecting';
   // Connect To lamp
-  await connectToLamp(ipcChannels.download, log);
+  if (!(await connectToLamp(ipcChannels.download, log))) {
+    return;
+  }
   log.subTAG = 'Handshake'
   const packetBuffers = []; // Array holding each packet sent
   // Send request to read code

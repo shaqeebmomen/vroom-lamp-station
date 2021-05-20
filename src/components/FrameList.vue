@@ -36,11 +36,14 @@
         </div>
       </div>
     </div>
+
     <transition-group
       appear
       name="list"
       tag="ul"
       :class="{ error: errorFrames.length > 0 }"
+      @after-enter="updateListUI('add')"
+      @after-leave="updateListUI('delete')"
     >
       <frame-item
         v-for="(item, index) in animation"
@@ -98,8 +101,6 @@ export default {
 
     const updateFrameIndex = (index) => {
       emit("updateFrameIndex", index);
-      list.children[index].children.namedItem("input").focus();
-      scrollToFrame(index);
     };
 
     const addFrame = () => {
@@ -114,13 +115,12 @@ export default {
      */
     const removeFrame = () => {
       emit("removeFrame");
-      nextTick(() => {
-        updateFrameIndex(props.activeIndex);
-      });
     };
 
+    let deletedIndex;
     const deleteFrame = (index) => {
       updateFrameIndex(index - 1);
+      deletedIndex = index;
       nextTick(() => {
         emit("deleteFrame", index);
       });
@@ -128,6 +128,17 @@ export default {
 
     const mirror = () => {
       emit("mirror");
+    };
+
+    const updateListUI = (source) => {
+      let index = 0;
+      if (source === "add") {
+        index = list.children.length - 1;
+      } else if (source === "delete") {
+        index = deletedIndex - 1;
+      }
+      list.children[index].children.namedItem("input").focus();
+      scrollToFrame(index);
     };
 
     return {
@@ -138,6 +149,7 @@ export default {
       updateFrameIndex,
       updateFrameTime,
       mirror,
+      updateListUI,
     };
   },
 };
@@ -180,11 +192,11 @@ ul {
   transform: scale(1);
 }
 .list-enter-active {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   /* Using this to take the element out of the document flow and enable the .move class to apply its transition */
   /* This works because the parent was positioned relative (the ul) */
   position: absolute;
@@ -192,6 +204,6 @@ ul {
 
 /* used for when items in a transition group move, this is an "active" class that defines a transition */
 .list-move {
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 </style>

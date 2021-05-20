@@ -198,7 +198,6 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.upload),
         async (response) => {
-          console.log(response);
           if (response.msg === "fail") {
             await displayToast(
               `No Data Written, Error: ${response.errorMsg}`,
@@ -209,7 +208,7 @@ export default {
             await displayToast(
               "Write Success, Lamp Reset and Updated!",
               false,
-              1000
+              1500
             );
           }
           isUploading.value = false;
@@ -220,7 +219,6 @@ export default {
       window.ipc.receive(
         ipcChannels.getToRenderChannel(ipcChannels.download),
         async (response) => {
-          console.log(response);
           if (response.msg === "fail") {
             await displayToast(
               `There was an error: ${response.errorMsg}`,
@@ -228,10 +226,10 @@ export default {
               2000
             );
           } else {
-            await displayToast("Read Success, UI Updated!", false, 1000);
-          }
-          for (let index = 0; index < animations.value.length; index++) {
-            animations.value[index] = response.data[index];
+            await displayToast("Read Success, UI Updated!", false, 1500);
+            for (let index = 0; index < animations.value.length; index++) {
+              animations.value[index] = response.data[index];
+            }
           }
           isDownloading.value = false;
         }
@@ -260,7 +258,7 @@ export default {
     const upload = async () => {
       isUploading.value = true;
       if (animsValid.value) {
-        const anims = toRaw(animations.value)._rawValue;
+        const anims = toRaw(animations.value);
         window.ipc.send(ipcChannels.getToMainChannel(ipcChannels.upload), {
           anims,
         });
@@ -283,6 +281,7 @@ export default {
      * Clear out all the data in animations
      */
     const onResetAll = () => {
+      displayToast("Animations Reset", false, 1500);
       resetAll();
     };
 
