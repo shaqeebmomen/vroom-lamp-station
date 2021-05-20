@@ -58,16 +58,7 @@
 </template>
 
 <script>
-import {
-  computed,
-  nextTick,
-  onMounted,
-  reactive,
-  ref,
-  toRaw,
-  watch,
-  watchEffect,
-} from "vue";
+import { computed, onMounted, ref, toRaw, watch } from "vue";
 import ShifterSelect from "./components/ShifterSelect.vue";
 import AnimationControl from "./components/AnimationControl.vue";
 import ipcChannels from "./channel_index.js";

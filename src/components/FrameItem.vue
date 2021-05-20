@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { onMounted, computed, watch, ref } from "vue";
+import { computed, watch, ref } from "vue";
 import colorHelp from "../helpers/color_help.js";
 
 export default {

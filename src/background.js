@@ -7,7 +7,6 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 import path, { resolve } from "path"
 import ipcChannels from "./channel_index.js"
 import SerialManager from './native/serial.js'
-import misc from './helpers/misc.js'
 import Logger from './helpers/logger.js'
 
 // Setting as global object to stop garbage collection
@@ -104,7 +103,7 @@ const closeSerial = async () => {
   try {
     await serialManager.close();
   } catch (error) {
-    console.log(err);
+    console.log(error);
   }
 }
 

@@ -96,7 +96,7 @@
 
 <script>
 
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import colorHelp from "../helpers/color_help.js";
 export default {
   props: ["activeColor"],

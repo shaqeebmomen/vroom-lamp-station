@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { nextTick, onMounted, reactive, ref, watch } from "vue";
+import { nextTick, onMounted } from "vue";
 import FrameItem from "./FrameItem.vue";
 export default {
   components: { FrameItem },

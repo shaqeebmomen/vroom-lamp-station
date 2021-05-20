@@ -37,61 +37,57 @@ export default class {
     }
 
     // Searches for lamp among connected devices
-    connect() {
+    async connect() {
         const log = new Logger('connect()', isDevelopment);
         log.subTAG = 'listing';
-        return new Promise(async (resolve, reject) => {
-
-            // List devices connected and check if lamp is listed
-            let device;
-            try {
-                device = (await SerialPort.list()).find((device) => {
-                    if (isDevelopment) {
-                        return this.allowedDevices.find((allowedDevice) => {
-                            return allowedDevice.vid === device.vendorId && allowedDevice.pid === device.productId && allowedDevice.serialNum === device.serialNumber;
-                        })
-                    }
-                    else {
-                        return device.serialNumber === this.allowedDevices[0].serialNum && device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
-                    }
-                })
-            } catch (error) {
-                log.logErr('LIST_ERR', error);
-                reject({ error, errorMsg: 'LIST_ERR' });
-            }
-            // if device not found
-            if (device === undefined) {
-                log.logErr('NO_DEVICE');
-                // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: 'NO_DEVICE' });
-                reject({ errorMsg: 'NO_DEVICE' })
-            }
-            log.logInfo('Device Found', device);
-            log.subTAG = 'port';
-            // Open port
-            this.port = new SerialPort(device.path, {
-                baudRate: 115200,
-                autoOpen: false,
-                dataBits: 8,
-                stopBits: 1,
-                parity: 'none',
+        // List devices connected and check if lamp is listed
+        let device;
+        try {
+            device = (await SerialPort.list()).find((device) => {
+                if (isDevelopment) {
+                    return this.allowedDevices.find((allowedDevice) => {
+                        return allowedDevice.vid === device.vendorId && allowedDevice.pid === device.productId && allowedDevice.serialNum === device.serialNumber;
+                    })
+                }
+                else {
+                    return device.serialNumber === this.allowedDevices[0].serialNum && device.vendorId === this.allowedDevices[0].vid && device.productId === this.allowedDevices[0].pid;
+                }
             })
+        } catch (error) {
+            log.logErr('LIST_ERR', error);
+            throw { error, errorMsg: 'LIST_ERR' };
+        }
+        // if device not found
+        if (device === undefined) {
+            log.logErr('NO_DEVICE');
+            // win.webContents.send(ipcChannels.getToRenderChannel(ipcChannels.upload), { error: 'NO_DEVICE' });
+            throw { errorMsg: 'NO_DEVICE' };
+        }
+        log.logInfo('Device Found', device);
+        log.subTAG = 'port';
+        // Open port
+        this.port = new SerialPort(device.path, {
+            baudRate: 115200,
+            autoOpen: false,
+            dataBits: 8,
+            stopBits: 1,
+            parity: 'none',
+        })
 
-            // Port event listeners
-            // Unhandled Errors
-            this.port.on('error', (err) => {
-                log.logErr('PORT_ERR_EVNT', err, 'Port Event/');
-            })
+        // Port event listeners
+        // Unhandled Errors
+        this.port.on('error', (err) => {
+            log.logErr('PORT_ERR_EVNT', err, 'Port Event/');
+        })
 
-            // Close
-            this.port.on('close', (err) => {
-                if (err && err.disconnected) log.logInfo('PORT_DISCONNECT', err, 'Port Event/')
-                else log.logInfo('PORT_CLOSE', err || null, 'Port Event/')
-            })
+        // Close
+        this.port.on('close', (err) => {
+            if (err && err.disconnected) log.logInfo('PORT_DISCONNECT', err, 'Port Event/')
+            else log.logInfo('PORT_CLOSE', err || null, 'Port Event/')
+        })
 
-            // Sniffing Serial port
-            if (isDevelopment) this.port.on('data', console.log);
-            resolve();
-        })// Promise end
+        // Sniffing Serial port
+        if (isDevelopment) this.port.on('data', console.log);
     } // end connect()
 
 
@@ -141,20 +137,16 @@ export default class {
     write(outputBuff, timeout) {
         const log = new Logger('write()', isDevelopment);
         if (this.port.isOpen) {
-            try {
-                return misc.executeWithTimeout(new Promise((resolve, reject) => {
-                    this.port.write(outputBuff, (err) => {
-                        if (err) {
-                            log.logErr('', err);
-                            reject({ error: err, errorMsg: 'WRITE_ERR' });
-                        }
-                        log.logInfo('Wrote', outputBuff);
-                        resolve();
-                    })
-                }), timeout, new Error('write failed'));
-            } catch (error) {
-                throw error
-            }
+            return misc.executeWithTimeout(new Promise((resolve, reject) => {
+                this.port.write(outputBuff, (err) => {
+                    if (err) {
+                        log.logErr('', err);
+                        reject({ error: err, errorMsg: 'WRITE_ERR' });
+                    }
+                    log.logInfo('Wrote', outputBuff);
+                    resolve();
+                })
+            }), timeout, new Error('write failed'));
         }
         else {
             throw new Error('port not open');
@@ -186,11 +178,7 @@ export default class {
         if (this.port.isOpen) {
             // Write
             log.subTAG = 'write';
-            try {
-                await this.write(outputBuff, 2000);
-            } catch (error) {
-                throw error
-            } // end write trycatch
+            await this.write(outputBuff, 2000);
             // drain and check response
             log.subTAG = 'read';
             let readParser;
@@ -303,32 +291,22 @@ export default class {
         const log = new Logger('handshake()', isDevelopment);
         if (this.port.isOpen) {
             log.subTAG = 'writing';
-            // Write try catch
-            try {
-                // Write Promise
-                await new Promise((resolve, reject) => {
-                    // Send intent code
-                    this.port.write(intentCode + '-', (err) => {
-                        if (err) {
-                            log.logErr('write', err);
-                            reject({ error: err, errorMsg: 'WRITE_ERR' });
-                        }
-                        log.logInfo('Wrote: ', intentCode + '-');
-                        resolve();
-                    })
-                }) // end write promise
-            } catch (error) {
-                throw error;
-            } // end write try catch
+            // Write Promise
+            await new Promise((resolve, reject) => {
+                // Send intent code
+                this.port.write(intentCode + '-', (err) => {
+                    if (err) {
+                        log.logErr('write', err);
+                        reject({ error: err, errorMsg: 'WRITE_ERR' });
+                    }
+                    log.logInfo('Wrote: ', intentCode + '-');
+                    resolve();
+                })
+            }) // end write promise
             log.subTAG = 'reading';
             // wait for handshake
-            // read try catch
-            try {
-                log.logInfo('reading for: ', acceptString);
-                return this.waitForString(acceptString, 3000);
-            } catch (error) {
-                throw error;
-            }
+            log.logInfo('reading for: ', acceptString);
+            return this.waitForString(acceptString, 3000);
         }
         else {
             throw Error('port not open');
